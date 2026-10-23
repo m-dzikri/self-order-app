@@ -1,0 +1,40 @@
+# Dependencies
+/node_modules
+/vendor
+
+# Environment & local credentials
+.env
+.env.backup
+.env.*.local
+.env.production
+
+# Laravel Storage & SQLite
+/storage/*.key
+/storage/app/*
+!/storage/app/.gitignore
+/storage/framework/cache/*
+!/storage/framework/cache/.gitignore
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitignore
+/storage/framework/views/*
+!/storage/framework/views/.gitignore
+/storage/logs/*
+!/storage/logs/.gitignore
+database/*.sqlite
+database/*.sqlite-journal
+
+# Compiled assets
+/public/hot
+/public/storage
+/public/build
+
+# Testing & caches
+.phpunit.result.cache
+.phpunit.cache
+
+# IDE & OS metadata
+.idea
+.vscode
+Thumbs.db
+.DS_Store
+*.log
