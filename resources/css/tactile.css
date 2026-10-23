@@ -1,0 +1,26 @@
+/**
+ * Tactile utility classes for the sketchbook look-and-feel.
+ * Hard shadows and press displacement only; no blur, no glow (UI-4).
+ */
+
+.shadow-tactile-sm {
+    box-shadow: var(--shadow-tactile-sm);
+}
+
+.shadow-tactile-md {
+    box-shadow: var(--shadow-tactile-md);
+}
+
+.shadow-tactile-lg {
+    box-shadow: var(--shadow-tactile-lg);
+}
+
+.btn-tactile {
+    box-shadow: var(--shadow-tactile-md);
+    transition: transform 80ms ease-out, box-shadow 80ms ease-out;
+}
+
+.btn-tactile:active {
+    transform: translate(2px, 2px);
+    box-shadow: var(--shadow-tactile-pressed);
+}

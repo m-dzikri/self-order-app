@@ -23,7 +23,7 @@ Setiap RFC diimplementasikan dengan menjalankan perintah:
 
 | RFC | Title | Features | Depends on | Complexity | Status |
 |---|---|:---:|:---:|:---:|:---:|
-| **RFC-001** | [Fondasi Proyek Laravel 11, Inertia React, dan Desain Sketchbook Kafe](file:///d:/Projects/stud-web/RFCs/RFC-001-Fondasi-Laravel-Inertia-React.md) | F25, F33 | none | High | Not started |
+| **RFC-001** | [Fondasi Proyek Laravel 11, Inertia React, dan Desain Sketchbook Kafe](file:///d:/Projects/stud-web/RFCs/RFC-001-Fondasi-Laravel-Inertia-React.md) | F25, F33 | none | High | Implemented |
 | **RFC-002** | [Dashboard Admin Filament – Manajemen Menu, Kategori, Varian & Stok](file:///d:/Projects/stud-web/RFCs/RFC-002-Dashboard-Admin-Filament-Menu-Kategori.md) | F31 | RFC-001 | Medium | Not started |
 | **RFC-003** | [Alur Sesi, Deteksi Meja QR, dan Formulir Takeaway](file:///d:/Projects/stud-web/RFCs/RFC-003-Alur-Sesi-Meja-QR-Takeaway.md) | F1, F2, F3, F4, F23, F26 | RFC-001 | Medium | Not started |
 | **RFC-004** | [Penjelajahan Katalog Menu & Drawer Kustomisasi Minuman/Makanan](file:///d:/Projects/stud-web/RFCs/RFC-004-Katalog-Menu-Drawer-Kustomisasi.md) | F5, F6, F7, F8, F9, F10, F11 | RFC-001, RFC-002, RFC-003 | High | Not started |
