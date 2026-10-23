@@ -1,44 +1,46 @@
 # Product Requirements Document (PRD)
 ## Kopi Corat-Coret – Self-Order Web App ("Sketchbook Kafe")
 
-- **Version:** 2.0.0 (Audited & Verified)
+- **Version:** 3.0.0 (Updated via CR-001: Laravel + Inertia React + Filament)
 - **Status:** Approved / Implementation-Ready
 - **Author:** Product Manager
 - **Date:** 2026-10-23
 - **Baseline Version:** [`PRD.v1.md`](file:///d:/Projects/stud-web/PRD.v1.md)
 - **Audit Findings Record:** [`PRD-REVIEW.md`](file:///d:/Projects/stud-web/PRD-REVIEW.md)
+- **Change Request Record:** [`changes/CHANGE-REQUEST-001.md`](file:///d:/Projects/stud-web/changes/CHANGE-REQUEST-001.md)
 - **Design System Reference:** [`desain-web/sketchbook_kafe/DESIGN.md`](file:///d:/Projects/stud-web/desain-web/sketchbook_kafe/DESIGN.md)
 
 ---
 
 ## 1. Overview
-**Kopi Corat-Coret Self-Order Web App** adalah aplikasi web pemesanan mandiri (*self-ordering*) ramah sentuhan (mobile-first) untuk kafe bertema "Sketchbook Kafe". Aplikasi ini memungkinkan pelanggan memesan menu kafe langsung dari smartphone tanpa perlu mengunduh aplikasi native di App Store atau Play Store.
+**Kopi Corat-Coret Self-Order Web App** adalah aplikasi web pemesanan mandiri (*self-ordering*) ramah sentuhan (mobile-first) untuk kafe bertema "Sketchbook Kafe". Aplikasi ini dibangun menggunakan arsitektur modern:
+- **Backend:** **Laravel** dengan database relasional (SQLite / MySQL) melalui Eloquent ORM.
+- **Frontend Pelanggan:** **Inertia.js + React** yang mengadopsi 100% sistem desain visual **Tactile / Skeuomorphic Sketchbook** (doodle organik, washi tape, marker shadow, kertas bertekstur hangat sesuai [`DESIGN.md`](file:///d:/Projects/stud-web/desain-web/sketchbook_kafe/DESIGN.md)).
+- **Panel Admin & Kasir:** **Filament Admin** untuk pengelolaan menu, kategori, stok, serta operasional verifikasi kasir dan pengubahan status pesanan.
 
-Sistem mendukung dua pintu masuk utama:
+Sistem mendukung dua pintu masuk utama bagi pelanggan:
 1. **Dine-In:** Membaca parameter meja secara otomatis saat pelanggan memindai QR Code di meja (misal: `?table=12`).
 2. **Takeaway:** Pelanggan yang mengakses tautan langsung tanpa parameter meja otomatis diarahkan ke formulir pesanan bawa pulang (*Takeaway / Pick-up*) dengan estimasi waktu pengambilan.
-
-Sistem mengadopsi estetika visual **Tactile / Skeuomorphic Sketchbook** (doodle organik, washi tape, marker shadow, kertas bertekstur hangat) yang memikat, intuitif, dan cepat digunakan.
 
 ---
 
 ## Product Type
 
-- **Type:** `web app` (Mobile-First Responsive Web Application)
+- **Type:** `web app` (Fullstack Web Application: Laravel Backend + Inertia React Frontend + Filament Admin)
 
 ### Applicable Checks Probed:
-- **Auth and Sessions:** Manajemen sesi ganda (*Guest Session* tanpa login vs *Member Account* dengan registrasi/login sederhana berbasis data lokal).
-- **Authorization per Resource:** Pelanggan hanya dapat melihat status dan struk pesanan milik sesi mereka sendiri melalui ID sesi / nomor pesanan.
-- **Data Model & Migrations:** Struktur skema data di `localStorage` (Menu, Keranjang, Pesanan Aktif, Riwayat, Akun Member, dan Kupon Diskon).
+- **Auth and Sessions:** Sesi ganda pelanggan (*Guest Checkout* via session/cookies vs *Member Account* via Laravel Auth), serta otentikasi aman untuk admin/kasir via Filament.
+- **Authorization per Resource:** Pelanggan hanya dapat melihat status dan struk pesanan milik sesi mereka sendiri; staf kasir/admin mengelola pesanan melalui panel terproteksi.
+- **Data Model & Migrations:** Skema database terstruktur via migrasi Laravel (tabel `menus`, `categories`, `orders`, `order_items`, `coupons`, `users`).
 - **Accessibility:** Kontras warna teks espresso (`#4A2C17`) pada latar krem susu (`#FFF9EF`), touch target minimum 44x44px untuk kenyamanan sentuh di layar HP.
-- **Responsive Layout:** Dioptimalkan secara presisi untuk tampilan mobile portrait (viewport 360px - 430px) dan responsif saat dibuka di tablet / desktop.
+- **Responsive Layout:** Dioptimalkan secara presisi untuk tampilan mobile portrait (viewport 360px - 430px) pada sisi pelanggan, dan responsif desktop/tablet pada panel Filament Admin.
 - **Browser Support:** Kompatibel dengan peramban mobile modern (Mobile Safari iOS, Google Chrome Android, Samsung Internet, in-app browser Instagram/QR Scanner).
-- **Page-Load Budget:** Pemuatan awal di bawah 2 detik pada jaringan 4G/Wi-Fi kafe, memanfaatkan aset web ringan dan Google Fonts teroptimasi.
-- **SEO for Public Pages:** Minimal untuk halaman katalog publik Takeaway (meta tag dasar dan OpenGraph preview untuk tautan media sosial).
+- **Page-Load Budget:** Pemuatan awal di bawah 2 detik dengan bundle Vite React dan aset teroptimasi.
+- **SEO for Public Pages:** Struktur meta tag OpenGraph dasar untuk pratinjau tautan media sosial.
 
 ### Skipped Checks (with Justification):
 - `binary size`: Diabaikan karena aplikasi dijalankan langsung via browser web tanpa paket instalasi binary native (APK/IPA).
-- `offline sync`: Diabaikan karena pemesanan dan pelacakan status pesanan secara esensial memerlukan koneksi internet aktif ke kafe.
+- `offline sync`: Diabaikan karena alur verifikasi menu, transaksi pembayaran, dan sinkronisasi pesanan ke kasir secara esensial memerlukan koneksi internet aktif ke kafe.
 
 ---
 
@@ -46,13 +48,14 @@ Sistem mengadopsi estetika visual **Tactile / Skeuomorphic Sketchbook** (doodle 
 
 ### Business Goals
 - Mengurangi antrean di kasir fisik pada jam sibuk (*peak hours*) hingga 60%.
-- Meniadakan kesalahan pencatatan pesanan (kustomisasi gula, level pedas, jenis susu) dengan transfer pesanan digital langsung.
+- Meniadakan kesalahan pencatatan pesanan (kustomisasi gula, level pedas, jenis susu) dengan transfer pesanan digital langsung dari smartphone pelanggan ke panel kasir.
+- Memberikan kemudahan kontrol penuh bagi owner dan kasir dalam mengubah stok, harga, dan memvalidasi pembayaran melalui panel Filament Admin.
 - Meningkatkan nilai rata-rata transaksi (*Average Order Value*) melalui visualisasi katalog makanan pendamping dan add-on yang menarik.
 
 ### User Goals
 - Pelanggan dapat memesan langsung dari tempat duduk tanpa perlu berdiri mengantre di kasir.
 - Pelanggan luar dapat memesan Takeaway sebelum tiba di kafe sehingga pesanan sudah siap begitu mereka sampai.
-- Transparansi total atas rincian biaya, pajak PB1, diskon kupon, dan estimasi waktu peracikan.
+- Kasir dapat memverifikasi pembayaran pelanggan secara cepat dan transparan melalui panel kasir.
 
 ---
 
@@ -62,21 +65,23 @@ Sistem mengadopsi estetika visual **Tactile / Skeuomorphic Sketchbook** (doodle 
 - **Deteksi Meja Otomatis & Pemisahan Mode:**
   - Parameter URL `?table=XX` mengunci mode Dine-In.
   - URL tanpa parameter otomatis masuk ke mode Takeaway (input nama, no. WA, estimasi jam ambil).
-- **Katalog Menu Interaktif:** Kategori menu (Kopi Susu, Manual Brew, Makanan Berat, Camilan, Non-Kopi), pencarian instan, dan badge promo.
-- **Kustomisasi Menu (Drawer Modal):** Pilihan varian dingin/panas, level gula, jenis susu (Fresh Milk, Oat Milk, Almond Milk, Soy Milk), topping/shot ekstra, level pedas, dan catatan barista.
-- **Keranjang & Struk Belanja:** Nota sementara bergaya struk kasir berporos robek, validasi kupon promo (`SKETCHKOPI`), perhitungan PB1 (10%), stepper jumlah item.
-- **Metode Pembayaran:**
-  - QRIS Instan (tampilan QR dinamis dengan timer hitung mundur 15 menit & refresh expired).
-  - E-Wallet Langsung (deeplink simulasi).
-  - Bayar di Kasir (pesanan berstatus *Menunggu Pembayaran di Kasir*, baru diproses setelah dibayar).
-- **Pelacak Pesanan Real-Time:** Status bertahap (*Menunggu Pembayaran / Diterima -> Sedang Dibuat -> Siap Diambil/Diantar*).
-- **Autentikasi Dual:** Opsi *Guest Checkout* (cepat) dan *Akun Member* (simpan profil & riwayat transaksi).
-- **Penyimpanan Lokal:** Seluruh state persisten disimpan di `localStorage` klien dengan penanganan error.
+- **Frontend Pelanggan (Inertia.js + React):**
+  - Katalog menu interaktif (filter kategori, pencarian real-time).
+  - Modal drawer kustomisasi minuman (suhu, gula, susu, add-on topping/shot ekstra) & makanan (level pedas, telur).
+  - Keranjang nota struk robek, perhitungan kupon diskon (`SKETCHKOPI`), dan pajak PB1 (10%).
+  - Metode pembayaran: QRIS Instan (timer 15 menit & refresh), E-Wallet langsung, dan Bayar di Kasir.
+  - Pelacak pesanan real-time bertahap.
+  - Opsi *Guest Checkout* dan registrasi/login akun member.
+- **Backend & Database (Laravel 11+):**
+  - Database relasional SQLite / MySQL dengan Eloquent ORM & migrasi skema terstruktur.
+  - Controller & routing Inertia.js untuk pengiriman data katalog dan pemrosesan checkout.
+- **Panel Administrasi & Kasir (Filament Admin):**
+  - CRUD Menu & Kategori dengan unggah foto dan kustomisasi varian.
+  - Manajemen pesanan masuk: filter pesanan *Menunggu Pembayaran di Kasir*, tombol konfirmasi lunas, dan pengubah status (*Sedang Diracik -> Siap Diambil*).
 
 ### Out of Scope (Excluded from MVP)
-- Integrasi Payment Gateway API pihak ketiga live dengan webhook bank (menggunakan simulasi transaksi QRIS & kasir pada rilis awal).
+- Integrasi Payment Gateway API pihak ketiga live dengan webhook bank otomatis (menggunakan simulasi transaksi QRIS & kasir terverifikasi internal).
 - Pengiriman notifikasi SMS / WhatsApp Business API gateway berbayar (pelanggan memantau status langsung via layar web).
-- Modul Kitchen Display System (KDS) terpisah untuk staf dapur (fokus utama adalah pengalaman sisi pelanggan; simulasi pergantian status pesanan disediakan di layar tracker).
 - Input nomor meja manual untuk Dine-In tanpa QR (Dine-in wajib via scan QR; akses tanpa QR diarahkan ke Takeaway).
 
 ---
@@ -93,6 +98,11 @@ Sistem mengadopsi estetika visual **Tactile / Skeuomorphic Sketchbook** (doodle 
 - **Kebutuhan:** Memesan sebelum tiba di kafe agar tidak terlambat.
 - **Perilaku:** Membuka link dari bio Instagram kafe saat di perjalanan, memilih Takeaway, mengisi nomor WhatsApp, membayar via QRIS, dan mengambil pesanan begitu tiba di counter pick-up.
 
+### 3. Budi (30) – Kasir & Manajer Operasional Kafe (Filament Admin)
+- **Karakteristik:** Bertanggung jawab melayani pembayaran tunai/kartu di kasir dan memantau stok bahan baku.
+- **Kebutuhan:** Antarmuka cepat untuk memvalidasi nomor pesanan pelanggan yang bayar di kasir serta menonaktifkan menu yang habis.
+- **Perilaku:** Membuka dashboard Filament di laptop kasir, mencari ID pesanan pelanggan, menekan tombol "Konfirmasi Lunas", dan pesanan langsung beralih status ke antrean barista.
+
 ---
 
 ## 6. Functional Requirements
@@ -106,10 +116,7 @@ Sistem mengadopsi estetika visual **Tactile / Skeuomorphic Sketchbook** (doodle 
 
 ### Modul B: Autentikasi & Akun Pengguna
 - **FR-4:** Sistem harus menyediakan alur **Guest Checkout** yang memungkinkan pemesanan instan tanpa perlu mendaftar atau memasukkan kata sandi. *(Priority: Must)*
-- **FR-5:** Sistem harus menyediakan alur **Akun Member** opsional yang memungkinkan pengguna untuk:
-  - Registrasi akun sederhana (Nama, No. WhatsApp, PIN/Password).
-  - Masuk (*Login*) dan keluar (*Logout*).
-  - Menyimpan profil dan melihat riwayat pesanan terdahulu dari `localStorage`. *(Priority: Should)*
+- **FR-5:** Sistem harus menyediakan alur **Akun Member** opsional yang memungkinkan pengguna untuk registrasi, login, menyimpan profil, dan melihat riwayat pesanan terdahulu. *(Priority: Should)*
 
 ### Modul C: Katalog Menu & Pencarian
 - **FR-6:** Sistem harus menampilkan daftar menu terbagi dalam kategori: *Semua*, *Kopi Susu*, *Manual Brew*, *Makanan Berat*, *Camilan*, dan *Non-Kopi*. *(Priority: Must)*
@@ -146,21 +153,26 @@ Sistem mengadopsi estetika visual **Tactile / Skeuomorphic Sketchbook** (doodle 
 ### Modul G: Pelacakan Pesanan Real-Time
 - **FR-21:** Setelah pesanan terkonfirmasi, sistem harus mengalihkan pengguna ke halaman pelacak pesanan sesuai desain [06_pelacak_pesanan_real_time](file:///d:/Projects/stud-web/desain-web/06_pelacak_pesanan_real_time). *(Priority: Must)*
 - **FR-22:** Pelacak harus menampilkan tahapan status visual:
-  - Kasus Bayar di Kasir: *Menunggu Pembayaran di Kasir* -> (Setelah bayar) -> *Pesanan Diterima* -> *Sedang Diracik* -> *Siap Diambil/Diantar*.
+  - Kasus Bayar di Kasir: *Menunggu Pembayaran di Kasir* -> (Setelah bayar dikonfirmasi) -> *Pesanan Diterima* -> *Sedang Diracik* -> *Siap Diambil/Diantar*.
   - Kasus QRIS / Online: *Pesanan Diterima* -> *Sedang Diracik* -> *Siap Diambil/Diantar*. *(Priority: Must)*
 - **FR-23:** Sistem harus menyediakan tombol simulasi atau kontrol progres status bagi pengguna/penguji untuk melihat perubahan status pesanan secara langsung. *(Priority: Should)*
 - **FR-24:** Halaman pelacak harus menampilkan rincian nomor meja (atau label Takeaway), nomor antrean pesanan, perkiraan waktu tunggu, dan tombol bantuan staf. *(Priority: Must)*
+
+### Modul H: Panel Admin Filament & Integrasi Backend (Added via CR-001)
+- **FR-30:** Sistem harus menyediakan Dashboard Admin berbasis **Filament** untuk mengelola data menu, kategori, harga, kustomisasi varian/add-on, dan tombol toggle status ketersediaan stok (*In Stock / Out of Stock*). *(Priority: Must)*
+- **FR-31:** Dashboard Admin Filament harus menyediakan antarmuka pemantauan pesanan kasir, memungkinkan kasir memverifikasi pembayaran pesanan berstatus *Menunggu Pembayaran di Kasir* dan memperbarui status pesanan (*Diterima -> Sedang Diracik -> Siap Diambil*). *(Priority: Must)*
+- **FR-32:** Backend Laravel harus menyediakan arsitektur database relasional (SQLite / MySQL) dan controller Inertia.js untuk sinkronisasi katalog menu, pemrosesan transaksi checkout, dan pelacakan status pesanan pelanggan. *(Priority: Must)*
 
 ---
 
 ## 7. Non-Functional Requirements
 
-- **NFR-1:** Antarmuka harus 100% konsisten dengan spesifikasi sistem desain [DESIGN.md](file:///d:/Projects/stud-web/desain-web/sketchbook_kafe/DESIGN.md): warna utama `#FFC93C`, tinta espresso `#4A2C17`, latar kertas `#FFF9EF`, tipografi *Epilogue* & *Nunito Sans*, dan bayangan solid marker `3px 3px 0px #4A2C17`. *(Priority: Must)*
+- **NFR-1:** Antarmuka pelanggan harus 100% konsisten dengan spesifikasi sistem desain [DESIGN.md](file:///d:/Projects/stud-web/desain-web/sketchbook_kafe/DESIGN.md): warna utama `#FFC93C`, tinta espresso `#4A2C17`, latar kertas `#FFF9EF`, tipografi *Epilogue* & *Nunito Sans*, dan bayangan solid marker `3px 3px 0px #4A2C17`. *(Priority: Must)*
 - **NFR-2:** Waktu respon interaksi klik/sentuh tombol (*First Input Delay*) harus di bawah 100ms dengan efek mikro-animasi tactile bouncer. *(Priority: Should)*
-- **NFR-3:** State keranjang dan pesanan aktif tidak boleh hilang saat halaman web dimuat ulang (*refresh*), tersimpan aman di `localStorage`. *(Priority: Must)*
+- **NFR-3:** State keranjang dan pesanan aktif tidak boleh hilang saat halaman web dimuat ulang (*refresh*), tersinkronisasi aman melalui database Laravel dan sesi browser. *(Priority: Must)*
 - **NFR-4:** Form nama, nomor telepon, dan kupon harus memiliki validasi pesan error bergaya corat-coret yang ramah dan jelas. *(Priority: Must)*
-- **NFR-5:** Tata letak harus fleksibel mulai dari resolusi 320px (perangkat kecil) hingga tablet/desktop (kiosk mode dengan container terpusat yang nyaman). *(Priority: Must)*
-- **NFR-6:** Penyimpanan `localStorage` harus memiliki skema kunci berstruktur (`kopi_cart`, `kopi_orders`, `kopi_member_session`, `kopi_active_order_id`) dengan mekanisme fallback penanganan eror (*try-catch*) jika kuota penyimpanan peramban penuh atau dibatasi mode private browsing. *(Priority: Must)*
+- **NFR-5:** Tata letak antarmuka pelanggan harus fleksibel mulai dari resolusi 320px (perangkat kecil) hingga tablet/desktop (kiosk mode dengan container terpusat yang nyaman). *(Priority: Must)*
+- **NFR-6:** Mekanisme penyimpanan harus tahan terhadap kegagalan jaringan atau sesi lokal dengan penanganan eror (*try-catch*) yang andal. *(Priority: Must)*
 
 ---
 
@@ -170,13 +182,13 @@ Sistem mengadopsi estetika visual **Tactile / Skeuomorphic Sketchbook** (doodle 
 ```mermaid
 graph TD
     A["Scan QR di Meja (misal ?table=12)"] --> B["Buka Welcome Screen 'MEJA 12'"]
-    B --> C["Buka Katalog Menu Kopi Corat-Coret"]
+    B --> C["Buka Katalog Menu Kopi Corat-Coret (Inertia React)"]
     C --> D["Pilih Menu & Kustomisasi Varian"]
     D --> E["Buka Keranjang & Masukkan Kupon Promo"]
     E --> F{"Pilih Cara Bayar"}
     F -->|"QRIS Instan"| G["Bayar QRIS & Verifikasi"]
     F -->|"Bayar di Kasir"| H["Status: Menunggu Pembayaran di Kasir"]
-    H --> I["Bayar di Kasir & Dikonfirmasi"]
+    H --> I["Kasir Verifikasi via Filament Admin"]
     G --> J["Pelacak Real-time: Sedang Dibuat"]
     I --> J
     J --> K["Status: Siap Diantar ke Meja 12"]
@@ -194,12 +206,22 @@ graph TD
     G --> H["Datang ke Counter Kafe & Tunjukkan Tiket"]
 ```
 
+### Journey 3: Kasir Kafe (Filament Admin)
+```mermaid
+graph TD
+    A["Kasir Buka Filament Admin (/admin)"] --> B["Buka Menu 'Pesanan Masuk'"]
+    B --> C["Pelanggan Sebutkan Nomor Tiket / Meja"]
+    C --> D["Kasir Klik 'Konfirmasi Pembayaran'"]
+    D --> E["Status Pesanan Berubah ke 'Pesanan Diterima / Diracik'"]
+    E --> F["Barista Meracik Kopi & Kasir Tandai 'Siap Diambil'"]
+```
+
 ---
 
 ## 9. Success Metrics
 - **Order Completion Rate:** > 85% sesi yang menambahkan menu ke keranjang berhasil menyelesaikan pesanan (*place order*).
 - **Time to Order:** Rata-rata waktu dari scan QR hingga checkout pesanan selesai < 90 detik.
-- **Voucher Utilization:** > 25% pelanggan baru memanfaatkan kode promo `SKETCHKOPI`.
+- **Cashier Verification Speed:** Waktu kasir memvalidasi pembayaran di Filament Admin < 5 detik per transaksi.
 - **Cart Abandonment:** < 15% pada tahap pemilihan pembayaran.
 
 ---
@@ -208,13 +230,14 @@ graph TD
 
 | Milestone | Target Luaran |
 |---|---|
-| **M1: Fondasi & Token Desain** | Pengaturan CSS variables, font Epilogue & Nunito Sans, utilitas tactile button, washi tape, dan card container. |
-| **M2: Navigasi & Pengalihan Meja/Takeaway** | Router query URL `?table=XX`, layar Welcome Meja, dan form inisialisasi Takeaway. |
-| **M3: Modul Katalog & Kustomisasi** | Tampilan katalog menu, search bar, filter kategori, dan modal drawer varian minuman/makanan. |
-| **M4: Keranjang, Perhitungan PB1 & Kupon** | Komponen nota struk kasir, validasi kupon diskon, kalkulasi pajak 10%, dan pilihan pembayaran. |
-| **M5: Layar Pembayaran & QRIS** | Antarmuka pembayaran QRIS, timer 15 menit, dan alur pembayaran kasir. |
-| **M6: Pelacak Pesanan Real-Time & Auth Member** | Pelacak status pesanan bertahap, persistensi `localStorage`, serta modul login/profil member. |
-| **M7: Polish & UAT** | Uji coba menyeluruh semua alur pengguna dan verifikasi responsive tablet/mobile. |
+| **M1: Inisialisasi Laravel & Filament** | Setup proyek Laravel 11+, konfigurasi SQLite/MySQL, instalasi Filament Admin v3, dan migrasi skema tabel dasar. |
+| **M2: Setup Inertia.js + React & Token Desain** | Integrasi `@inertiajs/react`, konfigurasi Tailwind & font Epilogue/Nunito Sans sesuai `DESIGN.md`. |
+| **M3: CRUD Katalog Menu & Stok Filament** | Resource Filament untuk Manajemen Kategori, Menu, Varian Modifiers, dan toggle status ketersediaan. |
+| **M4: Frontend Katalog & Kustomisasi React** | Halaman katalog menu pelanggan, drawer kustomisasi suhu/gula/susu/topping, dan pencarian instan. |
+| **M5: Keranjang Struk, Kupon & Checkout** | Komponen struk kasir robek, kalkulasi diskon dan PB1 10%, serta form checkout Takeaway/Dine-In. |
+| **M6: Layar Pembayaran (QRIS & Kasir)** | Antarmuka pembayaran QRIS 15 menit dan pembuatan order berstatus *Menunggu Pembayaran di Kasir*. |
+| **M7: Operasional Kasir & Pelacak Real-Time** | Fitur validasi kasir di Filament Admin dan halaman pelacak status pesanan bertahap di sisi pelanggan. |
+| **M8: Polish & UAT** | Uji coba menyeluruh semua alur pengguna dan verifikasi responsive tablet/mobile. |
 
 ---
 
@@ -222,19 +245,19 @@ graph TD
 
 | Keputusan | Pilihan Diterima | Alternatif Ditolak | Alasan & Justifikasi |
 |---|---|---|---|
+| **Tech Stack (CR-001 Reversal)** | **Laravel + Inertia.js (React) + Filament Admin** | Vanilla JS SPA murni + mock LocalStorage | Menyediakan panel admin dan kasir yang lengkap, aman, dan mudah dikelola tanpa mengorbankan performa interaktif antarmuka pelanggan. |
 | **Deteksi Dine-In vs Takeaway** | Menggunakan parameter query URL `?table=XX`. Jika tanpa parameter, otomatis mode Takeaway. | Memaksa user mengetik nomor meja secara manual saat Dine-In tanpa QR. | Mengetik nomor meja manual rentan salah input nomor meja orang lain. Jika tanpa QR di meja, lebih aman diarahkan ke Takeaway. |
-| **Alur Bayar di Kasir** | Pesanan baru diproses barista **setelah** pembayaran diverifikasi di kasir. | Pesanan langsung diracik sebelum dibayar. | Mencegah risiko pesanan fiktif (*unpaid orders*) yang sudah telanjur dibuat bahan bakunya oleh barista. |
+| **Alur Bayar di Kasir** | Pesanan baru diproses barista **setelah** pembayaran diverifikasi kasir via Filament. | Pesanan langsung diracik sebelum dibayar. | Mencegah risiko pesanan fiktif (*unpaid orders*) yang sudah telanjur dibuat bahan bakunya oleh barista. |
 | **Notifikasi Pelanggan** | Pelanggan memantau status secara visual langsung di layar pelacak web. | Integrasi gateway WhatsApp Notification API. | Mengurangi biaya operasional API pihak ketiga dan menjaga alur tetap mandiri di sisi web browser. |
-| **Penyimpanan Data MVP** | Menggunakan Browser `localStorage` + JSON mock data. | Menggunakan database server eksternal langsung. | Memungkinkan verifikasi fungsionalitas dan interaksi UI secara cepat, stabil, dan independen tanpa dependensi server awal. |
 | **Autentikasi Pengguna** | Menyediakan opsi **Guest Checkout** (utama) dan **Akun Member** (opsional). | Mewajibkan login/daftar akun terlebih dahulu. | Kewajiban registrasi akun dapat meningkatkan friksi (*drop-off*) pelanggan yang hanya ingin pesan kopi dengan cepat. |
-| **Pengelolaan Add-on & Topping (Audit Decision)** | Ditambahkan sebagai requirement resmi (FR-25) mendukung multi-select add-ons. | Menggabungkan add-on ke dalam catatan bebas barista. | Add-on seperti espresso shot dan grass jelly memiliki biaya tambahan yang harus diperhitungkan dalam struk kasir dan subtotal. |
-| **Penanganan QRIS Kedaluwarsa (Audit Decision)** | Ditambahkan requirement regenerasi QRIS baru (FR-26) jika timer mencapai 00:00. | Membiarkan QRIS tetap aktif tanpa batas waktu. | QRIS statis tanpa refresh melanggar standar keamanan transaksi dan membingungkan pelanggan. |
-| **Keseragaman Heading PRD (Audit Decision)** | Menggunakan heading literal `## Product Type` tanpa prefiks angka. | Mempertahankan `## 2. Product Type & Audit Scope`. | Memenuhi kompatibilitas deterministik skrip trace-check otomatis downstream yang memfilter heading `## Product Type`. |
+| **Pengelolaan Add-on & Topping** | Ditambahkan sebagai requirement resmi (FR-25) mendukung multi-select add-ons. | Menggabungkan add-on ke dalam catatan bebas barista. | Add-on seperti espresso shot dan grass jelly memiliki biaya tambahan yang harus diperhitungkan dalam struk kasir dan subtotal. |
+| **Penanganan QRIS Kedaluwarsa** | Ditambahkan requirement regenerasi QRIS baru (FR-26) jika timer mencapai 00:00. | Membiarkan QRIS tetap aktif tanpa batas waktu. | QRIS statis tanpa refresh melanggar standar keamanan transaksi dan membingungkan pelanggan. |
+| **Keseragaman Heading PRD** | Menggunakan heading literal `## Product Type` tanpa prefiks angka. | Mempertahankan `## 2. Product Type & Audit Scope`. | Memenuhi kompatibilitas deterministik skrip trace-check otomatis downstream yang memfilter heading `## Product Type`. |
 
 ---
 
 ## 12. Open Questions & Assumptions
 
-- **Asumsi 1:** Perangkat kasir fisik kafe memiliki akses untuk menandai atau memverifikasi nomor pesanan yang berstatus *Menunggu Pembayaran di Kasir* (di MVP disimulasikan via tombol konfirmasi pada status tracker).
+- **Asumsi 1:** Perangkat lokal pengembang atau server kafe memiliki runtime PHP (>= 8.2) dan Composer untuk menjalankan Laravel dan Filament Admin.
 - **Asumsi 2:** Pajak restoran (PB1) ditetapkan tetap sebesar 10% dari subtotal setelah dipotong kupon promo, sesuai regulasi daerah standar.
-- **Asumsi 3:** Menu dan harga bersifat statis di katalog mock `localStorage` dan dapat diperluas ke API remote di fase lanjutan.
+- **Asumsi 3:** Database menggunakan SQLite untuk kemudahan portabilitas instan pada tahap pengembangan lokal dan dapat dialihkan ke MySQL/PostgreSQL saat produksi.

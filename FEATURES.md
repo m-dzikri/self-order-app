@@ -1,16 +1,20 @@
 # Feature Specifications (FEATURES.md)
 ## Kopi Corat-Coret – Self-Order Web App ("Sketchbook Kafe")
 
-- **Version:** 1.0.0
+- **Version:** 2.0.0 (Updated via CR-001: Laravel + Inertia React + Filament)
 - **Status:** Approved for Implementation Planning
-- **Source Document:** [`PRD.md`](file:///d:/Projects/stud-web/PRD.md) (v2.0.0)
+- **Source Document:** [`PRD.md`](file:///d:/Projects/stud-web/PRD.md) (v3.0.0)
+- **Change Request Record:** [`changes/CHANGE-REQUEST-001.md`](file:///d:/Projects/stud-web/changes/CHANGE-REQUEST-001.md)
 - **Review Report:** [`PRD-REVIEW.md`](file:///d:/Projects/stud-web/PRD-REVIEW.md)
 - **Design Reference:** [`desain-web/sketchbook_kafe/DESIGN.md`](file:///d:/Projects/stud-web/desain-web/sketchbook_kafe/DESIGN.md)
 
 ---
 
 ## 1. Product Overview
-**Kopi Corat-Coret Self-Order Web App** adalah aplikasi web pemesanan mandiri berbasis mobile-first untuk kafe bertema "Sketchbook Kafe". Pelanggan dapat memesan makanan dan minuman langsung dari smartphone mereka tanpa perlu memasang aplikasi native. Sistem mengenali nomor meja secara otomatis melalui URL QR Code (`?table=XX`) untuk pelanggan Dine-In, serta menyediakan formulir khusus untuk pesanan Takeaway (bawa pulang). Seluruh transaksi, keranjang, kustomisasi rasa, struk kasir robek, pembayaran (QRIS/Kasir), dan pelacakan status pesanan real-time dikelola secara mandiri menggunakan browser client-side storage (`localStorage`).
+**Kopi Corat-Coret Self-Order Web App** adalah aplikasi web pemesanan mandiri berbasis mobile-first untuk kafe bertema "Sketchbook Kafe". Aplikasi ini dibangun secara terpadu menggunakan:
+- **Backend:** **Laravel** dengan database relasional (SQLite / MySQL) melalui Eloquent ORM.
+- **Frontend Pelanggan:** **Inertia.js + React** dengan sistem desain tactile doodle, washi tape, dan bayangan solid marker khas sketchbook.
+- **Panel Admin & Kasir:** **Filament Admin** untuk pengelolaan menu, kategori, status ketersediaan stok, serta verifikasi pesanan kasir secara real-time.
 
 ---
 
@@ -19,11 +23,11 @@
 ### Rekapitulasi Berdasarkan Prioritas MoSCoW
 | Prioritas | Jumlah Fitur | Persentase | Deskripsi |
 |---|:---:|:---:|---|
-| **Must Have** | 19 | 63.3% | Fondasi kritis minimum viable product (MVP) |
-| **Should Have** | 6 | 20.0% | Fitur penting penyempurna pengalaman pengguna |
-| **Could Have** | 1 | 3.3% | Fitur kemudahan pelengkap bila waktu memungkinkan |
-| **Won't Have** | 4 | 13.3% | Di luar cakupan rilis MVP (direncanakan untuk fase berikutnya) |
-| **Total** | **30** | **100%** | Seluruh requirement PRD terpetakan 100% |
+| **Must Have** | 22 | 66.7% | Fondasi kritis minimum viable product (MVP) |
+| **Should Have** | 6 | 18.2% | Fitur penting penyempurna pengalaman pengguna |
+| **Could Have** | 1 | 3.0% | Fitur kemudahan pelengkap bila waktu memungkinkan |
+| **Won't Have** | 4 | 12.1% | Di luar cakupan rilis MVP (direncanakan untuk fase berikutnya) |
+| **Total** | **33** | **100%** | Seluruh requirement PRD terpetakan 100% |
 
 ### Rekapitulasi Berdasarkan Kategori
 | Kategori | Jumlah Fitur | Rentang ID |
@@ -37,6 +41,7 @@
 | 7. Autentikasi & Akun Member | 2 | F23 - F24 |
 | 8. Fondasi UI & LocalStorage | 2 | F25 - F26 |
 | 9. Di Luar Cakupan (Out of Scope) | 4 | F27 - F30 |
+| 10. Panel Admin Filament & Integrasi Backend | 3 | F31 - F33 |
 
 ---
 
@@ -92,21 +97,28 @@
 | ID | Feature | Priority | Source | Complexity | Acceptance Criteria |
 |---|---|:---:|:---:|:---:|---|
 | F23 | Alur Pemesanan Cepat Guest Checkout | Must | FR-4 | Low | 1. Pelanggan dapat memesan secara instan tanpa perlu registrasi atau login password.<br>2. Data sesi tamu tersimpan secara transparan di perangkat. |
-| F24 | Registrasi, Login & Riwayat Member | Should | FR-5 | Medium | 1. Modal pendaftaran & login member sederhana (Nama, No. WhatsApp, PIN).<br>2. Member dapat melihat riwayat struk pesanan terdahulu yang tersimpan di `localStorage`. |
+| F24 | Registrasi, Login & Riwayat Member | Should | FR-5 | Medium | 1. Modal pendaftaran & login member sederhana (Nama, No. WhatsApp, PIN).<br>2. Member dapat melihat riwayat struk pesanan terdahulu yang tersimpan di database. |
 
 ### Kategori 8: Fondasi UI & LocalStorage (UI Foundation & LocalStorage)
 | ID | Feature | Priority | Source | Complexity | Acceptance Criteria |
 |---|---|:---:|:---:|:---:|---|
-| F25 | Sistem Desain Tactile Sketchbook Kafe | Must | NFR-1, NFR-2 | High | 1. Variabel CSS warna, Epilogue & Nunito Sans, hard shadow `3px 3px 0px #4A2C17`.<br>2. Washi tape, divider gerigi struk, dan sudut asimetris organik sesuai [DESIGN.md](file:///d:/Projects/stud-web/desain-web/sketchbook_kafe/DESIGN.md).<br>3. Waktu respon klik < 100ms dengan efek bouncer tactile. |
-| F26 | Persistensi State LocalStorage & Form | Must | NFR-3, NFR-4, NFR-5, NFR-6 | Medium | 1. Kunci data terstruktur (`kopi_cart`, `kopi_orders`, `kopi_member_session`, `kopi_active_order_id`).<br>2. Penanganan try-catch saat storage gagal.<br>3. Responsive layout mobile portrait (320px - 430px) hingga tablet. |
+| F25 | Sistem Desain Tactile Sketchbook Kafe (React) | Must | NFR-1, NFR-2 | High | 1. Komponen React menerapkan variabel CSS warna, Epilogue & Nunito Sans, hard shadow `3px 3px 0px #4A2C17`.<br>2. Washi tape, divider gerigi struk, dan sudut asimetris organik sesuai [DESIGN.md](file:///d:/Projects/stud-web/desain-web/sketchbook_kafe/DESIGN.md).<br>3. Waktu respon klik < 100ms dengan efek bouncer tactile. |
+| F26 | Validasi Form & Fleksibilitas Layar | Must | NFR-3, NFR-4, NFR-5, NFR-6 | Medium | 1. Penanganan state sesi dan fallback error handling.<br>2. Responsive layout mobile portrait (320px - 430px) hingga tablet. |
 
 ### Kategori 9: Di Luar Cakupan (Out of Scope / Won't Have)
 | ID | Feature | Priority | Source | Complexity | Acceptance Criteria |
 |---|---|:---:|:---:|:---:|---|
 | F27 | Integrasi Live Payment Gateway & Bank Webhook | Won't | Out of Scope | High | Menggunakan simulasi QRIS & pembayaran kasir internal tanpa integrasi webhook bank pihak ketiga pada rilis awal. |
 | F28 | Notifikasi Pesan Gateway WhatsApp Business API | Won't | Out of Scope | Medium | Pelanggan memantau status pesanan langsung dari layar web tracker tanpa pengiriman notifikasi WA otomatis berbayar. |
-| F29 | Tablet Khusus Kitchen Display System (KDS) | Won't | Out of Scope | High | Fokus utama MVP adalah antarmuka pelanggan; antarmuka dapur terpisah ditunda untuk fase berikutnya. |
+| F29 | Tablet Khusus Kitchen Display System (KDS Standalone) | Won't | Out of Scope | High | KDS layar terpisah fisik ditunda; fungsi pemantauan dan pengubahan status pesanan diakomodasi langsung via Filament Admin. |
 | F30 | Input Nomor Meja Manual untuk Dine-In Tanpa QR | Won't | Out of Scope | Low | Dine-In wajib melalui pemindaian QR meja; akses tanpa QR otomatis dialihkan ke Takeaway demi mencegah salah input meja. |
+
+### Kategori 10: Panel Admin Filament & Integrasi Backend (Admin & Backend)
+| ID | Feature | Priority | Source | Complexity | Acceptance Criteria |
+|---|---|:---:|:---:|:---:|---|
+| F31 | Dashboard Admin Filament – Manajemen Menu & Kategori | Must | FR-30 | Medium | 1. Panel Filament `/admin` dengan Resource Menu dan Kategori.<br>2. Form input nama, harga, kategori, foto menu, varian modifier/add-on, dan toggle status stok (In Stock / Out of Stock). |
+| F32 | Dashboard Admin Filament – Operasional Kasir & Status Pesanan | Must | FR-31 | Medium | 1. Tabel pesanan masuk menampilkan filter status (*Menunggu Kasir, Diterima, Sedang Diracik, Selesai*).<br>2. Tombol aksi satu-klik "Konfirmasi Lunas" bagi pesanan bayar di kasir.<br>3. Tombol aksi ubah status pesanan yang langsung tersinkronisasi ke pelacak pelanggan. |
+| F33 | Backend Laravel & Integrasi Inertia React | Must | FR-32 | High | 1. Migrasi skema database relasional (`menus`, `categories`, `orders`, `order_items`, `coupons`).<br>2. Controller Inertia mengoper data katalog dan menangani checkout pesanan.<br>3. Frontend React menerima props Inertia secara reaktif. |
 
 ---
 
@@ -143,6 +155,9 @@
 | **FR-27** | F7, F15 | Covered (Should) |
 | **FR-28** | F2 | Covered (Must) |
 | **FR-29** | F4 | Covered (Could) |
+| **FR-30** | F31 | Covered (Must) |
+| **FR-31** | F32 | Covered (Must) |
+| **FR-32** | F33 | Covered (Must) |
 | **NFR-1** | F25 | Covered (Must) |
 | **NFR-2** | F25 | Covered (Must) |
 | **NFR-3** | F26 | Covered (Must) |
@@ -151,5 +166,5 @@
 | **NFR-6** | F26 | Covered (Must) |
 | **Out-of-Scope (Payment Gateway API)** | F27 | Covered (Won't) |
 | **Out-of-Scope (WhatsApp Gateway API)** | F28 | Covered (Won't) |
-| **Out-of-Scope (KDS Tablet Back-Office)** | F29 | Covered (Won't) |
+| **Out-of-Scope (Standalone KDS Tablet)** | F29 | Covered (Won't) |
 | **Out-of-Scope (Manual Table Input)** | F30 | Covered (Won't) |
