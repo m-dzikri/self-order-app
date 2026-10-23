@@ -1,0 +1,30 @@
+@import './tokens.css';
+@import './tactile.css';
+
+/* Base typography (UI-3): Nunito Sans body, Epilogue headings */
+body {
+    margin: 0;
+    background-color: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-weight: 600;
+    -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--color-ink);
+}
+
+/* Sketchbook container (UI-6): fluid on mobile, capped at 480px on wide screens */
+.sketchbook-container {
+    width: 100%;
+    max-width: var(--container-max-width);
+    margin: 0 auto;
+}

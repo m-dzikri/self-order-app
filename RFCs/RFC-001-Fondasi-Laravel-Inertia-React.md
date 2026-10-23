@@ -92,10 +92,26 @@ export function formatRupiah(amount) {
 
 ## 4. Acceptance Criteria
 
-- [ ] Proyek Laravel 11+ terinisialisasi bersih dengan database `database.sqlite`.
-- [ ] `@inertiajs/react` dan `react` terkonfigurasi dan me-render template root `resources/views/app.blade.php`.
-- [ ] Font `Epilogue` dan `Nunito Sans` termuat dengan benar pada viewport peramban.
-- [ ] Seluruh komponen tombol taktil menerapkan hard shadow `3px 3px 0px #4A2C17` dan efek press `translate(2px, 2px)`.
-- [ ] Fungsi utilitas `formatRupiah(28000)` mengembalikan string persis `Rp 28.000`.
-- [ ] Tidak ada kemunculan warna hitam digital murni (`#000000`) pada styling antarmuka.
-- [ ] Pipeline Vite berjalan lancar tanpa error build.
+- [x] Proyek Laravel 11+ terinisialisasi bersih dengan database `database.sqlite`.
+- [x] `@inertiajs/react` dan `react` terkonfigurasi dan me-render template root `resources/views/app.blade.php`.
+- [x] Font `Epilogue` dan `Nunito Sans` termuat dengan benar pada viewport peramban.
+- [x] Seluruh komponen tombol taktil menerapkan hard shadow `3px 3px 0px #4A2C17` dan efek press `translate(2px, 2px)`.
+- [x] Fungsi utilitas `formatRupiah(28000)` mengembalikan string persis `Rp 28.000`.
+- [x] Tidak ada kemunculan warna hitam digital murni (`#000000`) pada styling antarmuka.
+- [x] Pipeline Vite berjalan lancar tanpa error build.
+
+---
+
+## Implementation Notes
+
+Implementasi selesai. Catatan deviasi dari isi RFC (semua terkait kondisi lingkungan/registri saat implementasi):
+
+1. **Laravel 12.12.2, bukan 11.x.** Composer 2.10 memblokir seluruh versi `laravel/framework` 11 (v11.31–v11.57) karena *security advisory* aktif (`PKSA-*`). RULES.md §3 secara eksplisit mengizinkan `^11.0 (atau ^12.0)`, sehingga scaffold menggunakan `laravel/laravel` v12.12.2 dengan PHP `^8.2`. Tidak ada perubahan API yang berdampak pada RFC lanjutan.
+2. **`laravel-vite-plugin@3.2.0`** (bukan v2 bawaan scaffold) karena v2 hanya memiliki peer dependency `vite ^7`, sedangkan RULES mensyaratkan Vite 8.3.5.
+3. **Tailwind CSS dihapus** dari scaffold bawaan; RFC-001 memakai token CSS murni (`tokens.css`, `tactile.css`), sesuai file-structure §2B.
+4. **`formatRupiah` menormalkan NBSP (U+00A0).** Kode harfiah di §3C menghasilkan `Rp\u00A028.000` (pemisah Intl id-ID adalah non-breaking space), sehingga acceptance criterion "string persis `Rp 28.000`" gagal. Normalisasi `.replace(/\u00a0/g, ' ')` ditambahkan — hasil sesuai kriteria, perilaku lain tetap sama.
+5. **Direktif `@routes` tidak dipakai** di `app.blade.php`; direktif itu milik paket Ziggy yang di luar scope RFC-001.
+6. **File tambahan di luar struktur §2B** yang diperlukan agar aplikasi berjalan: `app/Http/Controllers/WelcomeController.php` (invokable, ARCH-4/API-1), `resources/js/Pages/Welcome.jsx` (halaman Inertia root), dan test suite (`tests/Feature/WelcomePageTest.php` untuk TC-001-1, `tests/JS/formatRupiah.test.js` untuk TC-001-2). Skeleton test bawaan `ExampleTest` dihapus karena terduplikasi.
+7. **Filament tidak diinstal** di RFC ini — file-structure dan acceptance criteria RFC-001 tidak menyebutnya; Filament adalah scope RFC-002.
+
+Verifikasi: `php artisan test` 2/2 lulus, `npm test` 5/5 lulus, `npm run build` sukses (Vite 8.3.5), `php artisan migrate:fresh` bersih, `pint --test` lulus, render live `/` mengembalikan Inertia `component: Welcome` dengan props `appName`, dan pemeriksaan compiled CSS menemukan font Epilogue/Nunito Sans, hard shadow `3px 3px 0`, press `translate(2px,2px)`, latar `#FFF9EF`, tanpa `#000000`.

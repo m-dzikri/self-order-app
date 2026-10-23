@@ -1,0 +1,43 @@
+/**
+ * Design tokens for the "Sketchbook Kafe" tactile design system.
+ * Source of truth: desain-web/sketchbook_kafe/DESIGN.md (UI-1, UI-2, UI-3).
+ * Pure black (#000000) is forbidden; ink espresso is the darkest tone (UI-2).
+ */
+
+:root {
+    /* Palette */
+    --color-surface: #fff9ef;
+    --color-surface-dim: #e0d9ce;
+    --color-surface-container-lowest: #ffffff;
+    --color-surface-container-low: #faf3e7;
+    --color-surface-container: #fff1d6;
+    --color-surface-container-high: #eee7dc;
+    --color-surface-container-highest: #e8e2d6;
+
+    --color-ink: #4a2c17;
+    --color-ink-soft: #4f4634;
+    --color-outline: #817661;
+    --color-outline-variant: #d2c5ad;
+
+    --color-primary: #ffc93c;
+    --color-on-primary: #715500;
+    --color-primary-dim: #f4bf32;
+
+    --color-container: #fff1d6;
+    --color-promo: #ff7a59;
+    --color-error: #ba1a1a;
+
+    /* Typography (UI-3): Epilogue for headings, Nunito Sans for body & numbers */
+    --font-display: 'Epilogue', sans-serif;
+    --font-body: 'Nunito Sans', sans-serif;
+
+    /* Tactile elevation (UI-4): solid hard shadows, never blur */
+    --shadow-ink: var(--color-ink);
+    --shadow-tactile-sm: 2px 2px 0px var(--color-ink);
+    --shadow-tactile-md: 3px 3px 0px var(--color-ink);
+    --shadow-tactile-lg: 4px 4px 0px var(--color-ink);
+    --shadow-tactile-pressed: 1px 1px 0px var(--color-ink);
+
+    /* Layout (UI-6): mobile-first, centered container on wide screens */
+    --container-max-width: 480px;
+}
