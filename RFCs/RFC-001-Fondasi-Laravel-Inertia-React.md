@@ -67,9 +67,9 @@ resources/
 - Mengimpor Google Fonts: `Epilogue:wght@600;700;800` & `Nunito Sans:wght@600;700;800`.
 - Utilitas bayangan taktil (`tactile.css`):
   ```css
-  .shadow-tactile-sm { box-shadow: 2px 2px 0px #4A2C17; }
-  .shadow-tactile-md { box-shadow: 3px 3px 0px #4A2C17; }
-  .shadow-tactile-lg { box-shadow: 4px 4px 0px #4A2C17; }
+  .marker-shadow-sm { box-shadow: 2px 2px 0px #4A2C17; }
+  .marker-shadow-md { box-shadow: 3px 3px 0px #4A2C17; }
+  .marker-shadow-lg { box-shadow: 4px 4px 0px #4A2C17; }
   .btn-tactile:active {
     transform: translate(2px, 2px);
     box-shadow: 1px 1px 0px #4A2C17;

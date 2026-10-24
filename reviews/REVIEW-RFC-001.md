@@ -194,3 +194,256 @@ The backend foundation is genuinely solid — Laravel 12 + Inertia wired correct
 - Track the F25 acceptance point for washi tape / squiggly dividers / zigzag receipt cut (FEATURES.md:105, point 2) in a later RFC so it is not lost — RFC-001 intentionally scoped only tokens/shadows.
 - When `?table=` detection lands (RFC-003), validate the parameter server-side and add a test asserting non-numeric values are rejected.
 - `laravel/dusk` (`composer.json:23`) is installed but unused; either add the TC-001-3 Dusk test above or defer the dependency to RFC-008.
+
+---
+
+## Round 2 — 2026-10-24
+
+**Reviewer:** Subagent code review (fresh context, Round 2)
+**Scope:** Re-verification of Round 1 blocking issues + full re-assessment of RFC-001 after fix commit `70969e3` ("review-rfc: fix Round 1 blockers - reinstall Tailwind v4 for RFC-001 design tokens, fix badge enum 500 on /admin/menus, add TC-001-3 and regression tests")
+**Repo state reviewed:** clean working tree at `70969e3` (HEAD). `npm run build` not re-run per instructions; the existing build (`public/build/manifest.json` → `assets/app-P4Vhn28N.css`) was inspected directly.
+
+---
+
+## STEP 0 — Command Output (ACTUAL)
+
+### 1. `php artisan test` — PASS (exit code 0)
+
+```
+   PASS  Tests\Unit\BadgeEnumTest
+  ✓ badge labels match rfc specification                                                                         0.01s
+  ✓ badge values are stable for database storage
+
+   PASS  Tests\Feature\Filament\CategoryCrudTest
+  ✓ admin panel requires authentication                                                                          0.57s
+  ✓ admin can create category                                                                                    0.35s
+  ✓ category form rejects empty name                                                                             0.30s
+  ✓ admin can update category sort order                                                                         0.32s
+  ✓ category seeder populates all categories                                                                     0.04s
+
+   PASS  Tests\Feature\Filament\MenuCrudTest
+  ✓ admin can create menu with modifiers                                                                          0.60s
+  ✓ menu form rejects negative price                                                                              0.50s
+  ✓ menu form rejects empty name                                                                                  0.50s
+  ✓ menu list renders with badge menu                                                                             0.24s
+  ✓ edit menu form hydrates badge state                                                                           0.12s
+  ✓ menu seeder populates full catalog                                                                            0.04s
+
+   PASS  Tests\Feature\Filament\MenuStockToggleTest
+  ✓ stock toggle persists to database                                                                            0.32s
+  ✓ stock toggle can be restored                                                                                  0.29s
+
+   PASS  Tests\Feature\RootPageTest
+  ✓ root page renders inertia app                                                                                0.06s
+
+   PASS  Tests\Feature\TokenCssVisualTest
+  ✓ root page loads epilogue and nunito sans fonts                                                               0.04s
+  ✓ built stylesheet contains design tokens                                                                      0.03s
+
+   PASS  Tests\Feature\WelcomePageTest
+  ✓ root route renders inertia welcome page                                                                      0.04s
+  ✓ root route returns app blade shell                                                                            0.03s
+
+  Tests:    20 passed (90 assertions)
+  Duration: 4.62s
+```
+
+No PHPUnit 12 deprecation warnings this round (both `/** @test */` doc-comment warnings from Round 1 are gone). Matches the claim in the RFC's "Round 1 Review Fixes" section (20/20, 90 assertions).
+
+### 2. `vendor\bin\pint --test` — PASS (exit code 0), run WITHOUT directory limits
+
+```
+{"tool":"pint","result":"passed"}
+```
+
+`bootstrap/providers.php` (Round 1 failure: `fully_qualified_strict_types`, `line_ending`, `single_line_after_imports`) is fixed via commit diff: imports added and classes referenced by alias.
+
+### 3. `npm test` — PASS (exit code 0)
+
+```
+> test
+> node --test "tests/JS/**/*.test.js"
+
+▶ formatRupiah
+  ✔ formats 28000 as "Rp 28.000" (16.0129ms)
+  ✔ formats 0 as "Rp 0" (0.2615ms)
+  ✔ coerces numeric strings (CODE-2) (0.2614ms)
+  ✔ formats large amounts with thousand separators (0.1942ms)
+  ✔ falls back to "Rp 0" for invalid input (0.2354ms)
+✔ formatRupiah (18.7649ms)
+ℹ tests 5
+ℹ suites 1
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 110.9275
+```
+
+### 4. Registry verification of the RULES.md §3 Tailwind row
+
+```
+npm view tailwindcss version        -> 4.3.3
+npm view @tailwindcss/vite version  -> 4.3.3
+npm ls tailwindcss @tailwindcss/vite
+├─┬ @tailwindcss/vite@4.3.3
+│ └── tailwindcss@4.3.3 deduped
+└── tailwindcss@4.3.3
+```
+
+The claim `4.3.3` in RULES.md:51 is **verified correct** against the npm registry, and the installed tree matches.
+
+### 5. Compiled CSS audit (`public/build/assets/app-P4Vhn28N.css`, 8 691 bytes ≈ 8.7 kB as claimed)
+
+```
+file = app-P4Vhn28N.css bytes=8691
+rounded-xl{ count = 1
+min-h-[44px]{ count = 1            (CSS-escaped selector .min-h-\[44px\]{)
+focus-visible:outline-2 count = 1
+btn-tactile count = 2
+3px 3px 0 count = 1
+translate(2px count = 1
+000000 any-case count = 0
+default shadow utility classes count = 0   (.shadow-sm{ .shadow-md{ .shadow-lg{ .shadow-xl{ .shadow-2xl{ .shadow-inner{)
+0000001a alpha count = 0
+```
+
+All arbitrary-value utilities used by the JSX are compiled (checked with CSS-escaped selectors): `text-[26px]`, `leading-[34px]`, `bg-[var(--color-primary)]`, `text-[var(--color-surface)]`, `focus-visible:outline-[var(--color-ink)]`, `min-h-[44px]`, `min-w-[44px]`, `text-[18px]`, `border-[var(--color-ink)]`, `text-[var(--color-ink)]`, `bg-[var(--color-surface-container-lowest)]`, `bg-[var(--color-promo)]`, `text-[var(--color-outline)]`, `leading-[24px]`, `text-[16px]` — each count = 1, plus `marker-shadow-md` (1), `inline-flex`, `min-h-screen`, `px-4`, `px-5`, `py-6`, `rounded-xl`, `uppercase`, `tracking-wide`, `font-extrabold`, `font-semibold`, `border-2`, `items-center`, `justify-center`, `mb-6`, `p-5`, `text-sm` — all present.
+
+`000000` in the built JS bundle (`app-DTT7i3xQ.js:1`) was inspected: it is the UUID-v4 template string `` `10000000-1000-4000-8000-100000000000` `` inside the React/Inertia runtime — **not a color**, not customer-facing styling. In `resources/**` the only `000000` remains the comment *forbidding* it (`tokens.css:4`).
+
+### PRD "Product Type" checks — same scoping as Round 1
+
+Applied: Data Model & Migrations (categories migration in scope), Accessibility (44×44 target now genuinely rendered — `min-h-[44px]`/`min-w-[44px]` are compiled), Page-Load Budget (static; CSS bundle 8.7 kB), SEO (no OpenGraph yet — carried over as non-blocking). Skipped (with same justification as Round 1): Auth/Sessions and per-resource Authorization (no RFC-001 auth surface; `/admin` guard covered by RFC-002 tests, all passing), full relational schema (RFC-002+), live Browser Support / timing measurement.
+
+---
+
+## Verification of Round 1 Blocking Issues
+
+### 1. Dead Tailwind styling — ✅ **GENUINELY FIXED**
+
+- **Installed:** `package.json:11,16` — `tailwindcss@^4.3.3` + `@tailwindcss/vite@^4.3.3`; installed tree resolves to exactly 4.3.3; RULES.md §3 registry row added (RULES.md:51) and its version claim verified against `npm view`.
+- **Configured:** `vite.config.js:4,13` (plugin registered); `resources/css/app.css:1-6` — `@import 'tailwindcss' source(none);` + `@source '../js';` + `@source '../views';` + `@theme { --shadow-*: initial; }`. `source(none)` + narrow `@source` correctly prevents scanning of Filament's compiled views in `storage/framework/views/` and the `desain-web/` prototypes (bundle is 8.7 kB, not the claimed 42 kB full scan).
+- **Actually compiled:** the built stylesheet contains real rules for `.rounded-xl{`, `.min-h-\[44px\]{`, `.focus-visible\:outline-2`, and every other utility/variant the four JSX components and the blade shell use (full list in STEP 0 §5). The exact empirical signature Round 1 used to prove the defect (`rounded-xl => 0`) is now `=> 1`.
+- **UI-2 black defaults really removed:** `@theme { --shadow-*: initial; }` works — built CSS has **0** occurrences of `000000` (case-insensitive), **0** of the alpha form `0000001a`, and **0** compiled default `.shadow-sm/md/lg/xl/2xl/inner{` utilities. `Card.jsx:7` moved from arbitrary `shadow-[var(--shadow-tactile-md)]` to the `marker-shadow-md` class from `tactile.css:10-12`, which is compiled into the bundle (count 1).
+- Dead `<body class="bg-surface font-body">` classes removed (`app.blade.php:20` is now bare `<body>`); `app.css:11-18` styles the body from tokens instead.
+
+### 2. `pint --test` repo-wide green — ✅ **FIXED**
+
+`{"tool":"pint","result":"passed"}` on the full repo, no directory limits. `bootstrap/providers.php` diff shows proper `use` imports.
+
+### 3. Fake `tests/Unit/FormatRupiahTest.php` — ✅ **FIXED**
+
+- File deleted (confirmed: `tests/Unit/` contains only `BadgeEnumTest.php`; commit stat shows `tests/Unit/FormatRupiahTest.php | 25 -`).
+- Replacement `tests/Unit/BadgeEnumTest.php:10-22` is a **real** unit test — imports `App\Enums\BadgeEnum` and asserts labels/values/`tryFrom` behavior; it would fail if the enum changed.
+- Real TC-001-2 coverage confirmed by reading `tests/JS/formatRupiah.test.js:3` — it imports **the real module** (`../../resources/js/Utils/formatRupiah.js`) and line 8 asserts `formatRupiah(28000) === 'Rp 28.000'`; it runs via `npm test` (5/5 pass, STEP 0 §3). The util under test (`resources/js/Utils/formatRupiah.js:8-17`) is the app's actual implementation.
+
+### 4. TC-001-3 exists — `tests/Feature/TokenCssVisualTest.php` — ✅ **FIXED (adequate regression guard)**
+
+Read critically:
+
+- **Would it fail on a Round 1-style regression?** Yes. `test_built_stylesheet_contains_design_tokens():51-78` asserts the exact failure signatures: regex `/\.rounded-xl\s*\{/` (line 73 — the dead-utility class of regression), `btn-tactile` presence (line 74), tokens `#FFF9EF`/`#4A2C17`, hard shadow `3px 3px 0`, press `1px 1px 0`, Epilogue/Nunito Sans, and `assertStringNotContainsStringIgnoringCase('#000000')` (line 77). Removing Tailwind from the pipeline or reverting `Card.jsx` to a dead arbitrary shadow would fail this test on the next build. `test_root_page_loads_epilogue_and_nunito_sans_fonts():36-45` runs unconditionally (`withoutVite()`) and guards the font links.
+- **Skip-guard on missing build (lines 17-30, 55-57):** acceptable. `/public/build` is gitignored (`.gitignore:16`), so on a fresh clone the token test *skips* rather than fails. This is the right behavior for a dev machine before the first build, **but** it means the guard is only active if CI/dev pipelines run `npm run build` before `php artisan test`. Carried as a non-blocking process note, not a defect — the alternative (hard-fail on fresh clones) would break the standard Laravel test workflow, and the test correctly resolves the stylesheet path from the manifest rather than hard-coding a hash.
+- **Recorded test-type deviation** (compiled stylesheet + HTML response instead of browser computed style, Dusk deferred to RFC-008): reasonable and correctly recorded in the RFC's Round 1 Fixes note 6; Dusk E2E remains the stronger check for RFC-008.
+
+### RootPageTest fixes — ✅ **FIXED**
+
+`tests/Feature/RootPageTest.php:10-12` now uses `test_root_page_renders_inertia_app` (no `/** @test */` doc-comment — the PHPUnit 12 warning is gone from output) and calls `withoutVite()`, so it no longer depends on a local build manifest. It still duplicates `WelcomePageTest` (Round 1 non-blocking suggestion to consolidate was not taken) — still non-blocking.
+
+### New issues introduced by the fix commit — none blocking
+
+Full diff of `70969e3` inspected (`git show 70969e3 --stat`, plus per-file diffs for `Button.jsx`, `Card.jsx`, `app.blade.php`, `tactile.css`, `bootstrap/providers.php`, `app.css`, `package.json`, `RULES.md`):
+
+- `tactile.css` classes renamed `.shadow-tactile-*` → `.marker-shadow-*` (lines 6-16) to avoid colliding with Tailwind's `shadow-*` utility namespace. Visual result identical; the only remaining reference is `Card.jsx:7` (updated). **Minor doc drift:** RFC §3A's CSS snippet still shows the old `.shadow-tactile-*` names — cosmetic, non-blocking.
+- `Button.jsx` change is comment-only; `app.blade.php` change removes the dead body classes; `MenuResource.php`/`MenuCrudTest.php`/`BadgeEnum` changes are RFC-002 scope (out of this review) but their tests pass.
+- No `console.log`, `TODO`, or `FIXME` in `resources/js` (grep: none).
+
+---
+
+## 1. RFC Adherence — **PASS**
+
+| # | AC | Round 2 Verdict | Evidence |
+|---|---|---|---|
+| AC1 | Laravel 11+ + `database.sqlite` | PASS | Unchanged from Round 1 (Laravel 12.12.2, documented deviation allowed by RULES §3) |
+| AC2 | Inertia React root render | PASS | Unchanged; `WelcomePageTest` + `RootPageTest` green |
+| AC3 | Fonts load | PASS | `app.blade.php:10-15`; now guarded by `TokenCssVisualTest:36-45` |
+| AC4 | Hard shadow + press | PASS (now fully in practice) | `tactile.css:18-26` compiled; button fill/border/44px target now live utilities (STEP 0 §5); `.btn-tactile` count 2, `3px 3px 0` ×1, `translate(2px` ×1 in built CSS |
+| AC5 | `formatRupiah(28000)==='Rp 28.000'` | PASS | Real util + real JS test (5/5); fake PHP test removed |
+| AC6 | No `#000000` in customer-facing styling | PASS (now test-enforced) | Built CSS: 0 × `000000`, 0 × `0000001a`, 0 × default shadow utilities; assertion at `TokenCssVisualTest:77` |
+| AC7 | Vite build clean | PASS | Manifest + hashed assets consistent (`app-P4Vhn28N.css` referenced by manifest and present); build delegated per instructions |
+
+The Round 1 central finding (dead Tailwind utilities → design system not rendering) is empirically disproven for the current build: every utility class in `Button.jsx`, `Card.jsx`, `AppLayout.jsx`, `Welcome.jsx` has a compiled rule.
+
+## 2. Rules Compliance — **PASS**
+
+| Rule | Round 2 Verdict | Finding |
+|---|---|---|
+| ARCH-3/5/7, API-1 | PASS | Unchanged from Round 1 |
+| UI-1 (100% design system) | **PASS** (was FAIL) | Components now actually realize DESIGN.md: utilities compile, tokens drive colors/typography, 44px touch target live |
+| UI-2 (no `#000000`) | PASS | Zero in built CSS including Tailwind's `#0000001a` shadow fallback (`--shadow-*: initial` verified working); enforced by test |
+| UI-3 | PASS | `tokens.css:30-32`, `app.css:20-29`; asserted in test |
+| UI-4 | **PASS** (Card shadow now renders) | `marker-shadow-md` compiled; `.btn-tactile:active` press verified |
+| UI-5 | N/A (deferred, carryover) | Still owned by no RFC — F25 acceptance point 2 (FEATURES.md:105) traceability flag stands |
+| UI-6 | PASS | `.sketchbook-container` + now-live `px-4 py-6` |
+| CODE-1 | **PASS** (was FAIL) | `pint --test` passed repo-wide |
+| CODE-2 | PASS | Real JS test on real module |
+| CODE-3 | **PASS** (was NEEDS WORK) | Fake test deleted; no dead class strings; no debug code |
+| CODE-4 | PASS | Unchanged |
+| TEST-1 | **PASS** (was NEEDS WORK) | F33: `WelcomePageTest`; F25: `TokenCssVisualTest` (tokens/fonts/shadow/black) + compiled-utility regression guard |
+
+## 3. Security — **PASS**
+
+Unchanged posture from Round 1 (minimal root surface, CSRF meta at `app.blade.php:6`, sqlite gitignored, Filament auth covered by RFC-002 tests — all 5 Category/Menu CRUD tests green this round). New dependencies are build-time devDependencies (Tailwind), not runtime attack surface.
+
+## 4. Performance — **PASS**
+
+- Customer CSS bundle: **8 691 bytes** with Tailwind properly tree-shaken via `source(none)` + `@source '../js'`/`'../views'` — validates the author's bloat-avoidance claim (42 kB → 8.7 kB).
+- No runtime cost from the fix; `@theme` reset is compile-time. Fonts/preconnect posture unchanged.
+
+## 5. Maintainability — **PASS**
+
+Positive: the Round 1 "would-pass-if-the-app-were-broken" test was deleted and replaced with a genuine unit test; TC-001-3 now pins the exact regression class that motivated Round 1; PHPUnit 12 deprecation warnings eliminated; the RFC's Implementation Notes + Round 1 Fixes section document the conflict and resolution transparently (including superseding note 3).
+
+Non-blocking carryovers (all previously flagged, none regressed):
+1. `RootPageTest` still duplicates `WelcomePageTest` (consolidation suggested in Round 1, not taken).
+2. `TokenCssVisualTest` token assertions skip on fresh clones without a build — CI must run `npm run build` before `php artisan test` for the guard to be active.
+3. `laravel/dusk` still installed but unused (RFC-008 deferral).
+4. RFC §3A CSS snippet still names `.shadow-tactile-*` while `tactile.css` uses `.marker-shadow-*` — cosmetic doc drift inside the RFC.
+5. RULES.md:51 wording says `@source resources/**` while the actual config is narrower (`../js` + `../views`) — the implementation is stricter than the rule text; harmless, but the row could say so precisely.
+6. F25 acceptance point 2 (washi tape / zigzag) remains unowned by any RFC.
+
+---
+
+## Judgment on the Recorded Deviation / Conflict Resolution (Tailwind reinstalled vs. pure-CSS rewrite)
+
+**The reasoning HOLDS — the deviation is properly recorded and justified.**
+
+1. **Authority chain is correct.** The RFC's original note 3 ("Tailwind dihapus") was itself an *undeclared* deviation from the governing artifacts: CR-001 (changes/CHANGE-REQUEST-001.md:58) explicitly lists **Tailwind CSS** in the updated registry-verified dependency table ("Memperbarui tabel dependensi terverifikasi: … Filament v3, Tailwind CSS, Vite"). At Round 1 time the row was missing from RULES.md — the RFC note was working around a documentation drift instead of following CR-001. Reinstalling Tailwind *restores* consistency with CR-001, and the fix commit simultaneously repairs the RULES.md drift with a registry-verified row (version `4.3.3` independently re-confirmed via `npm view` in STEP 0 §4).
+2. **RFC contract preserved.** RFC §2B's file structure listed no Tailwind config because Tailwind v4 is configured inline in `app.css` — no new files were needed, the three-CSS-file structure (`tokens.css`, `tactile.css`, `app.css`) still holds, and the design tokens remain pure CSS custom properties consumed by both Tailwind arbitrary values and the tactile classes. RFC §3A's token/shadow specs are implemented verbatim (modulo the cosmetic class rename).
+3. **Option parity.** Round 1 explicitly offered both fix paths ((a) plain CSS classes, (b) re-add Tailwind properly). Option (b) is now fully executed: installed, configured, source-restricted, UI-2-safe, and regression-tested. DESIGN.md imposes no styling-methodology constraint (grep: no Tailwind mention — no conflict either way).
+4. **Downstream coherence.** RFCs 004–008 build many React screens; a consistent utility pattern with a tested config is a defensible architectural choice, and the RFC documents it as superseding note 3 rather than silently contradicting it — which is exactly what the change-management workflow requires.
+
+Residual nit (non-blocking): RFC §3A snippet class names (item 4 in carryovers) should be updated in a future docs pass so the RFC body matches `tactile.css`.
+
+---
+
+## Overall Risk Level: **Low** (was High in Round 1)
+
+## Summary
+
+All four Round 1 blocking issues are genuinely, empirically fixed: the design system now actually renders (every JSX utility class has a compiled rule in the 8.7 kB built stylesheet, verified class-by-class), `@theme { --shadow-*: initial; }` verifiably eliminates Tailwind's `#000000`/`#0000001a` shadow defaults (0 occurrences), `pint --test` is green repo-wide, the fake PHP test is deleted with real coverage preserved in `tests/JS/formatRupiah.test.js` (real module, `formatRupiah(28000)==='Rp 28.000'`), and `TokenCssVisualTest` provides a genuine regression guard for the exact defect class Round 1 caught. The test suite grew to 20/20 (90 assertions) with zero PHPUnit deprecation warnings. The Tailwind-vs-pure-CSS conflict resolution is sound: it follows CR-001's verified dependency table (with the RULES.md drift repaired and the `4.3.3` claim independently verified against npm), keeps the RFC's file structure and token architecture intact, and is transparently recorded as superseding the earlier deviation note. Remaining items are non-blocking carryovers (duplicate root test, build-required-for-token-test CI ordering, unused Dusk, minor RFC doc drift, unowned F25 point 2).
+
+## Blocking Issues (Round 2)
+
+**None.**
+
+## Improvement Suggestions (non-blocking)
+
+1. Ensure CI (or the pre-merge checklist) runs `npm run build` before `php artisan test` so `TokenCssVisualTest`'s stylesheet assertions are active rather than skipped on fresh clones.
+2. Consolidate `RootPageTest` into `WelcomePageTest` (or give RootPageTest a distinct purpose, e.g. `?table=` behavior in RFC-003) to remove the duplication Round 1 flagged.
+3. Update RFC-001 §3A's CSS snippet from `.shadow-tactile-*` to `.marker-shadow-*` so the RFC body matches `tactile.css:6-16`.
+4. Tighten the RULES.md:51 row wording to name the actual directives (`source(none)` + `@source ../js` + `@source ../views`) instead of the vaguer `@source resources/**`.
+5. Defer or adopt `laravel/dusk` deliberately at RFC-008 (still unused).
+6. Assign F25 acceptance point 2 (washi tape / squiggly dividers / zigzag receipt cut, FEATURES.md:105) to an explicit RFC so it is not lost.
+7. Carry forward Round 1's suggestions: self-host fonts later (third-party render-blocking request), OpenGraph tags when landing pages exist (RFC-003/004), server-side validation of `?table=` with a rejection test.
