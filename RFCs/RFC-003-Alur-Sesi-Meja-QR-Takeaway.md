@@ -95,7 +95,7 @@ Implementasi selesai (2026-10-24). Catatan deviasi dari isi RFC:
 3. **Maskot "Si Corat" dirender sebagai SVG doodle inline** di `Welcome.jsx`, bukan gambar eksternal. Prototipe `01_welcome_meja_12/code.html` memakai URL `lh3.googleusercontent.com` yang tidak tersedia lokal; SVG inline deterministik, offline, dan sesuai bahasa doodle UI-5.
 4. **Warna prototipe di luar palet UI-2 dipetakan ke token resmi**: `tertiary-container`/`secondary-fixed` prototipe → `--color-promo` (#FF7A59) untuk banner promo, `--color-primary` (#FFC93C) untuk lencana meja & washi tape, `--color-container` (#FFF1D6) untuk highlight headline, `--color-error` (#BA1A1A) untuk validasi.
 5. **Gaya error "coretan"**: teks `--color-error` + garis wavy SVG di bawah field invalid (`SquiggleError` di `TakeawayFormModal.jsx`). DESIGN.md tidak menspesifikasikan state error khusus; mengikuti kosakata `doodle-squiggly` (UI-5).
-6. **`?table` tidak valid diabaikan** (bukan 4xx): nilai non-angka atau >3 digit (`abc`, `1234`) jatuh kembali ke mode Takeaway. QR meja yang sah selalu berupa angka 1–3 digit. Diuji di `WelcomeSessionTest`.
+6. **`?table` tidak valid diabaikan** (bukan 4xx): nilai non-angka, nol, atau >3 digit (`abc`, `0`, `1234`) jatuh kembali ke mode Takeaway. QR meja yang sah selalu berupa angka 1–999. Diuji di `WelcomeSessionTest`.
 7. **Sesi disimpan server-side** (Laravel session), bukan localStorage — RULES DATA-1 membatasi localStorage pada cache keranjang. Persistensi diuji lintas-request (`test_stored_session_persists_across_requests`).
 8. **Sesi Dine-In terkunci (ARCH-4)**: `storeTakeaway` tidak pernah mengubah `mode`/`table_number` sesi dine-in; UI juga tidak menawarkan tombol "ganti ke bawa pulang" saat dine-in aktif.
 9. **Sanitasi AC7 dua lapis**: React auto-escape (tanpa `dangerouslySetInnerHTML`) + `strip_tags()` server-side sebelum validasi & penyimpanan. Catatan: `strip_tags` membuang tag tapi meninggalkan teks di dalamnya (mis. `<script>alert(1)</script>Sasa` → `alert(1)Sasa`) — teks residual ini aman karena dirender sebagai text node.
@@ -104,7 +104,23 @@ Implementasi selesai (2026-10-24). Catatan deviasi dari isi RFC:
 
 ### Bukti Verifikasi (2026-10-24)
 
-- `php artisan test` → **34 test passed (207 assertions)**, mencakup `WelcomeSessionTest` (TC-003-1, AC-1/2/5/6) dan `TakeawaySessionTest` (TC-003-2/3, AC-2/3/7 + ARCH-4).
+- `php artisan test` → **38 test passed (239 assertions)**, mencakup `WelcomeSessionTest` (TC-003-1, AC-1/2/5/6 — AC-5 dan wiring AC-2/4/6 diverifikasi terhadap bundel terbangun karena stack tidak punya DOM test tooling) dan `TakeawaySessionTest` (TC-003-2/3, AC-2/3/7 + ARCH-4).
 - `npm test` → **18 test pass** (`validateTakeaway.test.js` TC-003-3 klien, `copyToClipboard.test.js` TC-003-4, `formatRupiah.test.js`).
-- `npm run build` → sukses (Welcome 13.9 kB, Catalog 1.3 kB; stylesheet 15.4 kB, nol `#000000`).
+- `npm run build` → sukses (Welcome 14.5 kB, Catalog 1.3 kB; stylesheet 16.1 kB, nol `#000000`).
 - `vendor/bin/pint --test` → **passed** (seluruh repo).
+
+---
+
+## Round 1 Review Fixes (2026-10-24)
+
+Perbaikan atas blocking issue di `reviews/REVIEW-RFC-003.md`:
+
+1. **Kontras WCAG AA (blocking #1).** Teks banner promo, kode kupon, dan aksen headline sebelumnya krem/jingga-di-atas-jingga (2,45–2,57:1). Diperbaiki: teks promo & kupon → espresso `--color-ink` (4,92:1 dan 12,62:1 — mengikuti prototipe yang memang memakai teks gelap), aksen headline → teks ink dengan highlighter `--color-primary`, subtitle & label memo → `--color-ink-soft` (8,88:1). Semua pasangan dihitung ulang dan lulus AA (≥4,5:1).
+2. **Touch target (blocking #1).** Tombol "Ubah data pesan bawa pulang" ~37px → `min-h-[44px]`.
+3. **Guard AC-5 + wiring AC-2/4/6 (blocking #2).** Test baru `test_welcome_bundle_renders_promo_voucher` dan `test_welcome_bundle_wires_takeaway_form_and_catalog_cta` meng-assert isi bundel Welcome terbangun (`SKETCHKOPI`, `Diskon 10%`, `/session/takeaway`, `/katalog`, `ngopiyuk123`) — mengikuti pola `TokenCssVisualTest`; gagal jika komponen dihapus atau wiring diputus. Klaim bukti di atas diperbaiki (sebelumnya keliru menyebut AC-5 tercakup).
+4. **SEC-1 FormRequest (blocking #3).** Validasi + sanitasi dipindah ke `app/Http/Requests/StoreTakeawayRequest.php`: `prepareForValidation` melakukan `strip_tags`+`trim` (pola double-validate di controller dihapus), aturan SEC-2 + pesan error + closure pickup 10-menit pindah ke sana.
+5. **Modal DESIGN.md §181 (blocking #3).** `TakeawayFormModal` kini lembar notepad `--color-container` (#FFF1D6) dengan dua strip washi tape ±2,5° di sudut atas — sesuai spesifikasi modal desain.
+6. **Penegakan saran non-blocking**: `?table=0` ditolak (regex `^[1-9]\d{0,2}$`, diuji); `WIFI_PASSWORD` kini dipakai sebagai default `WifiMemoCard` (satu sumber kebenaran); region "Tersalin!" selalu ter-mount (`aria-live` persisten); Escape-menutup + autofocus field pertama pada modal; test konversi ARCH-4 (sesi takeaway + `?table=12` → dine-in dengan data pelanggan dipertahankan) ditambahkan.
+7. **Tercatat, tidak dikerjakan di round ini**: `config('app.timezone')` masih `UTC` sedangkan kafe beroperasi WIB — belum berdampak (validasi pickup server lebih permisif untuk WIB), tetapi **harus diset `Asia/Jakarta` sebelum RFC-005/006** memakai perbandingan waktu `pickup_at`. Duplikasi `RootPageTest`/`WelcomePageTest` (dari RFC-001) tetap ada — cleanup di RFC berikutnya. Fokus-trap penuh pada modal ditunda ke RFC-008 (Dusk).
+
+Verifikasi Round 1: `php artisan test` **38/38 lulus (239 assertions)**, `npm test` 18/18, `npm run build` sukses (nol `#000000`), `vendor/bin/pint --test` **passed**.

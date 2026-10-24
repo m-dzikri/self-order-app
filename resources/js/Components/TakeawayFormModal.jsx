@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import Button from './Button';
 import { validateTakeaway } from '../Utils/validateTakeaway';
@@ -29,7 +29,8 @@ function SquiggleError({ message }) {
 /**
  * Takeaway session form (RFC-003, F2 / SEC-2): name, WhatsApp number and
  * pickup estimate. Client-side rules mirror the server validation so the
- * squiggly errors appear before the round-trip.
+ * squiggly errors appear before the round-trip. The dialog is a stacked
+ * notepad sheet (#FFF1D6) secured with washi-tape corners (DESIGN.md §181).
  */
 export default function TakeawayFormModal({ open, onClose }) {
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
@@ -38,14 +39,27 @@ export default function TakeawayFormModal({ open, onClose }) {
         pickup_at: '',
     });
     const [clientErrors, setClientErrors] = useState({});
+    const nameRef = useRef(null);
 
     useEffect(() => {
         if (open) {
             reset();
             clearErrors();
             setClientErrors({});
+            nameRef.current?.focus();
         }
     }, [open]);
+
+    // Escape closes the dialog (a11y affordance for role="dialog").
+    useEffect(() => {
+        if (!open) return undefined;
+
+        const handleKeyDown = (event) => {
+            if (event.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [open, onClose]);
 
     if (!open) return null;
 
@@ -68,13 +82,23 @@ export default function TakeawayFormModal({ open, onClose }) {
             <div
                 aria-labelledby="takeaway-form-title"
                 aria-modal="true"
-                className="w-full max-w-md rounded-xl border-2 border-[var(--color-ink)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-tactile-lg)]"
+                className="relative w-full max-w-md rounded-xl border-2 border-[var(--color-ink)] bg-[var(--color-container)] p-5 shadow-[var(--shadow-tactile-lg)]"
                 role="dialog"
             >
+                {/* Washi-tape corners holding the notepad sheet down (DESIGN.md) */}
+                <div
+                    aria-hidden="true"
+                    className="absolute -top-3 -left-4 h-6 w-20 -rotate-[2.5deg] rounded-sm bg-[var(--color-primary)] opacity-80"
+                />
+                <div
+                    aria-hidden="true"
+                    className="absolute -right-4 -top-3 h-6 w-20 rotate-[2.5deg] rounded-sm bg-[var(--color-promo)] opacity-70"
+                />
+
                 <h2 id="takeaway-form-title" className="mb-1 text-[22px] leading-[30px] font-extrabold">
                     Pesan Bawa Pulang 🧾
                 </h2>
-                <p className="mb-4 text-[14px] leading-[20px] text-[var(--color-outline)]">
+                <p className="mb-4 text-[14px] leading-[20px] text-[var(--color-ink-soft)]">
                     Isi datanya dulu ya, biar pesananmu siap pas diambil.
                 </p>
 
@@ -90,6 +114,7 @@ export default function TakeawayFormModal({ open, onClose }) {
                             }`}
                             onChange={(event) => setData('name', event.target.value)}
                             placeholder="mis. Sasa"
+                            ref={nameRef}
                             type="text"
                             value={data.name}
                         />

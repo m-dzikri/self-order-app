@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Support\Facades\File;
 use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
@@ -46,6 +47,42 @@ class WelcomeSessionTest extends TestCase
             );
     }
 
+    public function test_zero_table_param_is_ignored(): void
+    {
+        // Meja 0 tidak sah (QR selalu 1-999).
+        $this->withoutVite()
+            ->get('/?table=0')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page->component('Welcome')
+                ->where('mode', 'takeaway')
+            );
+    }
+
+    public function test_takeaway_session_converts_to_dine_in_keeping_customer_data(): void
+    {
+        // ARCH-4: parameter table yang sah mengunci mode dine-in, tetapi
+        // data pelanggan yang sudah terisi tidak hilang.
+        $this->withSession(['order_session' => [
+            'mode' => 'takeaway',
+            'name' => 'Sasa Putri',
+            'phone' => '081234567890',
+            'pickup_at' => '14:30',
+        ]])
+            ->get('/?table=12')
+            ->assertOk()
+            ->assertInertia(fn (AssertableInertia $page) => $page->component('Welcome')
+                ->where('mode', 'dine_in')
+                ->where('tableNumber', 12)
+                ->where('orderSession.name', 'Sasa Putri')
+            );
+
+        $session = session('order_session');
+
+        $this->assertSame('dine_in', $session['mode']);
+        $this->assertSame(12, $session['table_number']);
+        $this->assertSame('Sasa Putri', $session['name']);
+    }
+
     public function test_overlong_table_param_is_ignored(): void
     {
         $this->withoutVite()
@@ -76,5 +113,66 @@ class WelcomeSessionTest extends TestCase
             ->get('/katalog')
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page->component('Catalog'));
+    }
+
+    /**
+     * Jalur bundel halaman Welcome dari manifest Vite, atau null bila belum dibangun.
+     */
+    private function builtWelcomeBundlePath(): ?string
+    {
+        $manifestPath = public_path('build/manifest.json');
+
+        if (! File::exists($manifestPath)) {
+            return null;
+        }
+
+        $manifest = json_decode(File::get($manifestPath), true);
+        $file = $manifest['resources/js/Pages/Welcome.jsx']['file'] ?? null;
+
+        if ($file === null) {
+            return null;
+        }
+
+        $path = public_path('build/'.$file);
+
+        return File::exists($path) ? $path : null;
+    }
+
+    /**
+     * Guard AC-5 (Round 1 review): banner kupon harus menampilkan kode
+     * SKETCHKOPI dan diskon 10%. Diverifikasi terhadap bundel terbangun —
+     * komponen React tidak punya DOM test tooling di stack ini.
+     */
+    public function test_welcome_bundle_renders_promo_voucher(): void
+    {
+        $path = $this->builtWelcomeBundlePath();
+
+        if ($path === null) {
+            $this->markTestSkipped('Bundel Welcome tidak ditemukan — jalankan `npm run build` terlebih dahulu.');
+        }
+
+        $bundle = File::get($path);
+
+        $this->assertStringContainsString('SKETCHKOPI', $bundle, 'Kode kupon SKETCHKOPI tidak ada di bundel Welcome (AC-5).');
+        $this->assertStringContainsString('Diskon 10%', $bundle, 'Klaim diskon 10% tidak ada di bundel Welcome (AC-5).');
+    }
+
+    /**
+     * Wiring AC-2/AC-6: form takeaway dan CTA katalog harus benar-benar
+     * terpasang di halaman Welcome (bukan sekadar komponennya ada).
+     */
+    public function test_welcome_bundle_wires_takeaway_form_and_catalog_cta(): void
+    {
+        $path = $this->builtWelcomeBundlePath();
+
+        if ($path === null) {
+            $this->markTestSkipped('Bundel Welcome tidak ditemukan — jalankan `npm run build` terlebih dahulu.');
+        }
+
+        $bundle = File::get($path);
+
+        $this->assertStringContainsString('/session/takeaway', $bundle, 'Form takeaway tidak menyambung ke POST /session/takeaway.');
+        $this->assertStringContainsString('/katalog', $bundle, 'CTA Mulai Pesan tidak menyambung ke /katalog.');
+        $this->assertStringContainsString('ngopiyuk123', $bundle, 'Sandi Wi-Fi tidak ada di bundel Welcome (AC-4).');
     }
 }

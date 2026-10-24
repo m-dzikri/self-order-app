@@ -61,16 +61,16 @@ export default function Welcome({ appName, mode, tableNumber, orderSession }) {
             <header className="mb-6 text-center">
                 <h1 className="mb-2 text-[26px] leading-[34px] font-extrabold">
                     Hai! Selamat Datang di{' '}
-                    <span className="relative text-[var(--color-promo)]">
+                    <span className="relative text-[var(--color-ink)]">
                         {appName}
                         <span
                             aria-hidden="true"
-                            className="absolute bottom-0 left-0 -z-10 h-2 w-full rounded bg-[var(--color-container)]"
+                            className="absolute bottom-0 left-0 -z-10 h-2.5 w-full -rotate-1 rounded bg-[var(--color-primary)]"
                         />
                     </span>{' '}
                     ☕✨
                 </h1>
-                <p className="mx-auto max-w-xs text-[16px] leading-[24px] text-[var(--color-outline)]">
+                <p className="mx-auto max-w-xs text-[16px] leading-[24px] text-[var(--color-ink-soft)]">
                     Pesan langsung dari {isDineIn ? `meja ${tableNumber}` : 'mana aja'} tanpa ribet antre
                     &amp; tanpa download aplikasi!
                 </p>
@@ -121,7 +121,7 @@ export default function Welcome({ appName, mode, tableNumber, orderSession }) {
             {!sessionComplete && !isDineIn && (
                 <div className="mb-3 text-center">
                     <button
-                        className="rounded-lg px-3 py-2 text-[14px] font-bold underline text-[var(--color-outline)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ink)]"
+                        className="min-h-[44px] rounded-lg px-4 py-2 text-[14px] font-bold underline text-[var(--color-ink-soft)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ink)]"
                         onClick={() => setFormOpen(true)}
                         type="button"
                     >

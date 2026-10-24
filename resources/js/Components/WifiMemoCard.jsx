@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { copyToClipboard } from '../Utils/copyToClipboard';
+import { WIFI_PASSWORD } from '../Utils/validateTakeaway';
 
 /**
  * Wi-Fi memo sticky note (RFC-003, F3) with one-tap password copy
  * (F4 / FR-29): tapping the password chip copies it and stamps
- * a "Tersalin! ✨" doodle over the note for a moment.
+ * a "Tersalin! ✨" doodle over the note for a moment. The status
+ * region is always mounted so screen readers announce the change.
  */
-export default function WifiMemoCard({ ssid = 'CoratCoret_Guest', password = 'ngopiyuk123' }) {
+export default function WifiMemoCard({ ssid = 'CoratCoret_Guest', password = WIFI_PASSWORD }) {
     const [copied, setCopied] = useState(false);
     const timerRef = useRef(null);
 
@@ -31,11 +33,11 @@ export default function WifiMemoCard({ ssid = 'CoratCoret_Guest', password = 'ng
 
             <div className="flex items-start justify-between gap-2 pt-1">
                 <div className="flex items-center gap-2">
-                    <span aria-hidden="true" className="material-symbols-outlined text-[var(--color-primary)]">
+                    <span aria-hidden="true" className="material-symbols-outlined text-[var(--color-ink)]">
                         wifi
                     </span>
                     <div className="flex flex-col">
-                        <span className="text-[12px] font-bold uppercase text-[var(--color-outline)]">
+                        <span className="text-[12px] font-bold uppercase text-[var(--color-ink-soft)]">
                             Koneksi Kafe
                         </span>
                         <span className="text-[14px] font-extrabold">{ssid}</span>
@@ -47,23 +49,26 @@ export default function WifiMemoCard({ ssid = 'CoratCoret_Guest', password = 'ng
                     onClick={handleCopy}
                     className="flex flex-col items-end rounded-lg border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-high)] px-2.5 py-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ink)]"
                 >
-                    <span className="text-[12px] font-bold text-[var(--color-outline)]">Sandi</span>
+                    <span className="text-[12px] font-bold text-[var(--color-ink-soft)]">Sandi</span>
                     <span className="text-[14px] font-extrabold tracking-wide text-[var(--color-on-primary)] select-all">
                         {password}
                     </span>
                 </button>
             </div>
 
-            {/* "Tersalin!" stamp doodle (F4 feedback) */}
-            {copied && (
-                <p
-                    aria-live="polite"
-                    className="pointer-events-none absolute -right-2 -top-3 rotate-[-8deg] rounded-lg border-2 border-[var(--color-promo)] bg-[var(--color-surface)] px-3 py-1 text-[16px] font-extrabold text-[var(--color-promo)]"
-                    role="status"
-                >
-                    Tersalin! ✨
-                </p>
-            )}
+            {/* "Tersalin!" stamp doodle (F4 feedback); aria-live region stays
+                mounted so assistive tech reliably announces the copy. */}
+            <p
+                aria-live="polite"
+                className={`pointer-events-none absolute -right-2 -top-3 -rotate-[8deg] rounded-lg border-2 px-3 py-1 text-[16px] font-extrabold transition-opacity ${
+                    copied
+                        ? 'border-[var(--color-promo)] bg-[var(--color-surface)] text-[var(--color-ink)] opacity-100'
+                        : 'opacity-0'
+                }`}
+                role="status"
+            >
+                Tersalin! ✨
+            </p>
         </div>
     );
 }

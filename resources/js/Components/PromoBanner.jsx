@@ -1,6 +1,8 @@
 /**
  * Opening promo scratch banner (RFC-003, F3 / UI-4 / UI-5): tilted ticket
- * sticker announcing the SKETCHKOPI opening voucher.
+ * sticker announcing the SKETCHKOPI opening voucher. Text is espresso ink
+ * on the orange surface (as in the prototype) — cream-on-orange fails
+ * WCAG AA at these sizes.
  */
 export default function PromoBanner() {
     return (
@@ -15,15 +17,15 @@ export default function PromoBanner() {
                     </span>
                 </span>
                 <div className="min-w-0">
-                    <p className="text-[12px] font-extrabold uppercase tracking-wide text-[var(--color-surface)]">
+                    <p className="text-[12px] font-extrabold uppercase tracking-wide text-[var(--color-ink)]">
                         Promo Spesial
                     </p>
-                    <p className="text-[14px] leading-[20px] font-bold text-[var(--color-surface)]">
+                    <p className="text-[14px] leading-[20px] font-bold text-[var(--color-ink)]">
                         Diskon 10% pesanan pertama
                     </p>
-                    <p className="mt-1 text-[12px] leading-[16px] font-bold text-[var(--color-surface)]">
+                    <p className="mt-1 text-[12px] leading-[16px] font-bold text-[var(--color-ink)]">
                         Gunakan kupon:{' '}
-                        <strong className="rounded bg-[var(--color-surface-container-lowest)] px-1.5 py-0.5 tracking-wider text-[var(--color-promo)]">
+                        <strong className="rounded bg-[var(--color-surface-container-lowest)] px-1.5 py-0.5 tracking-wider text-[var(--color-ink)]">
                             SKETCHKOPI
                         </strong>
                     </p>
