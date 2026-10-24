@@ -48,6 +48,7 @@ Seluruh dependensi pihak ketiga di bawah ini telah diverifikasi langsung terhada
 | **@inertiajs/react** | `3.9.1` | npm (`npm view @inertiajs/react version`) | Adapter Inertia.js untuk rendering komponen React |
 | **React** | `19.3.1` | npm (`npm view react version`) | Library UI reaktif sisi pelanggan |
 | **Vite** | `8.3.5` | npm (`npm view vite version`) | Build tool & asset bundler modern berkecepatan tinggi |
+| **Tailwind CSS** | `4.3.3` (dengan `@tailwindcss/vite`) | npm (`npm view tailwindcss version`) | Utility CSS untuk komponen React pelanggan; konfigurasi `source(none)` + `@source resources/**` agar scan terbatas ke aset aplikasi |
 | **Database** | SQLite (dev) / MySQL | Standard RDBMS | Penyimpanan relasional persisten |
 | **Google Fonts** | Hosted API | Google Fonts | Font `Epilogue` (Display/Headlines) & `Nunito Sans` (Body & Angka) |
 | **Material Symbols Outlined** | Hosted CDN | Google Fonts API | Ikonografi doodle ramah sentuh |

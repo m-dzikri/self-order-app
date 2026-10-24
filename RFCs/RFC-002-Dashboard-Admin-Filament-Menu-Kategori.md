@@ -106,3 +106,21 @@ Implementasi diselesaikan pada 2026-10-24. Deviasi & keputusan tercatat di bawah
 - `vendor/bin/pint app database tests config` → bersih (PSR-12, RULES CODE-1).
 - `npm run build` → sukses (Vite 8.3.5, 626 modul).
 - `php artisan route:list` → rute `admin`, `admin/login`, `admin/categories*`, `admin/menus*` terdaftar.
+
+---
+
+### Round 1 Review Fixes (2026-10-24)
+
+Perbaikan atas blocking issue di `reviews/REVIEW-RFC-002.md`:
+
+1. **BUG FIX (blocking): `/admin/menus` HTTP 500 setelah seeding.** Kolom `badge` pada `MenuResource::table()` menerapkan closure bertipe `?string $state`, sedangkan `Menu::casts['badge']` me-*cast* ke `BadgeEnum` — Filament mengirim instance enum sehingga terjadi `TypeError` persis di `formatStateUsing`. Diperbaiki: kedua closure (`formatStateUsing` dan `color`) kini menerima `BadgeEnum|string|null` dan menormalkan nilai lewat `match`/`tryFrom`. Kondisi ini tersembunyi dari 15 test awal karena tidak ada test yang merender tabel berisi menu bermerek — ditambal dengan test regresi baru.
+2. **Test regresi ditambahkan** di `MenuCrudTest`:
+   - `test_menu_list_renders_with_badge_menu` → me-render `ListMenus` dengan menu `badge=favorit`; test ini gagal (TypeError/500) bila fix nomor 1 dibatalkan.
+   - `test_edit_menu_form_hydrates_badge_state` → memastikan form edit menormalkan state enum menjadi string (`assertFormSet(['badge' => 'spesial'])`), membuktikan alur edit-save badge aman pada Filament v3.
+3. **`pint --test` seluruh repo kini passed** (blocking #2): `bootstrap/providers.php` diperbaiki (line ending campuran CRLF/LF + referensi FQCN) bersama `tests/Feature/TokenCssVisualTest.php`, memakai `vendor/bin/pint` tanpa batasan direktori.
+4. **Deviasi lain yang kini tercatat** (sebelumnya tidak tercatat — sesuai temuan review):
+   - **Nama file migrasi berbeda dari §2B**: aktual `2026_10_23_000001_create_categories_table.php`, `2026_10_24_000002_create_menus_table.php`, `2026_10_24_000003_create_menu_modifiers_table.php` — RFC §2B memuat `…_000002/000003/000004` semuanya bertanggal `10_23`. Perbedaan penamaan tidak memengaruhi urutan eksekusi maupun skema.
+   - **Kolom `categories.is_active`** ditambahkan (tidak ada di erDiagram §2A): diperlukan untuk toggle status kategori; sudah masuk `$fillable` + cast boolean.
+   - **Saran non-blocking** dari Round 1 (rename provider `AdminPanelPanelProvider`, test hapus/upload gambar, `unique` pada nama menu, hardening kredensial admin default) **tidak dikerjakan di round ini** dan tetap tercatat di `reviews/REVIEW-RFC-002.md` sebagai improvement suggestions.
+
+Verifikasi Round 1: `php artisan test` **20/20 lulus (90 assertions)** (termasuk 2 test regresi di atas), `vendor/bin/pint --test` **passed** seluruh repo, `npm run build` sukses, `php artisan migrate:fresh --seed --force` bersih, `npm test` 5/5.

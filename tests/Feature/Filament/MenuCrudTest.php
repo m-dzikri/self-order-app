@@ -3,6 +3,8 @@
 namespace Tests\Feature\Filament;
 
 use App\Filament\Resources\MenuResource\Pages\CreateMenu;
+use App\Filament\Resources\MenuResource\Pages\EditMenu;
+use App\Filament\Resources\MenuResource\Pages\ListMenus;
 use App\Models\Category;
 use App\Models\Menu;
 use App\Models\User;
@@ -124,6 +126,61 @@ class MenuCrudTest extends TestCase
             ->assertHasFormErrors(['name' => 'required']);
 
         $this->assertDatabaseCount('menus', 0);
+    }
+
+    public function test_menu_list_renders_with_badge_menu(): void
+    {
+        $category = Category::create([
+            'name' => 'Kopi Susu',
+            'slug' => 'kopi-susu',
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+
+        $menu = Menu::create([
+            'category_id' => $category->id,
+            'name' => 'Es Kopi Susu Aren',
+            'price' => 22000,
+            'badge' => 'favorit',
+            'is_active' => true,
+            'is_in_stock' => true,
+        ]);
+
+        $this->actingAs(User::factory()->create());
+
+        // Regresi Round 1: cast BadgeEnum pada model memicu TypeError di kolom
+        // badge sehingga halaman /admin/menus menghasilkan HTTP 500.
+        Livewire::test(ListMenus::class)
+            ->assertSuccessful()
+            ->assertCanSeeTableRecords([$menu]);
+    }
+
+    public function test_edit_menu_form_hydrates_badge_state(): void
+    {
+        $category = Category::create([
+            'name' => 'Kopi Susu',
+            'slug' => 'kopi-susu',
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+
+        $menu = Menu::create([
+            'category_id' => $category->id,
+            'name' => 'V60 Flores Bajawa',
+            'price' => 30000,
+            'badge' => 'spesial',
+            'is_active' => true,
+            'is_in_stock' => true,
+        ]);
+
+        $this->actingAs(User::factory()->create());
+
+        Livewire::test(EditMenu::class, ['record' => $menu->getKey()])
+            ->assertSuccessful()
+            ->assertFormSet([
+                'name' => 'V60 Flores Bajawa',
+                'badge' => 'spesial',
+            ]);
     }
 
     public function test_menu_seeder_populates_full_catalog(): void

@@ -115,3 +115,21 @@ Implementasi selesai. Catatan deviasi dari isi RFC (semua terkait kondisi lingku
 7. **Filament tidak diinstal** di RFC ini — file-structure dan acceptance criteria RFC-001 tidak menyebutnya; Filament adalah scope RFC-002.
 
 Verifikasi: `php artisan test` 2/2 lulus, `npm test` 5/5 lulus, `npm run build` sukses (Vite 8.3.5), `php artisan migrate:fresh` bersih, `pint --test` lulus, render live `/` mengembalikan Inertia `component: Welcome` dengan props `appName`, dan pemeriksaan compiled CSS menemukan font Epilogue/Nunito Sans, hard shadow `3px 3px 0`, press `translate(2px,2px)`, latar `#FFF9EF`, tanpa `#000000`.
+
+---
+
+### Round 1 Review Fixes (2026-10-24)
+
+**Konflik artefak yang ditemukan reviewer & resolusinya** — Catatan deviasi #3 di atas ("Tailwind CSS dihapus … RFC-001 memakai token CSS murni") **bertabrakan dengan kode**: keempat komponen JSX (`Button.jsx`, `Card.jsx`, `AppLayout.jsx`, `Welcome.jsx`) justru ditulis dengan utility Tailwind, sehingga seluruh utility mati di browser (kelas tanpa aturan CSS) dan kriteria AC-3/AC-4 gagal direalisasikan (verifikasi empiris: `.rounded-xl` → nol aturan). Dua opsi penyelesaian: (a) menulis ulang komponen ke CSS murni, atau (b) memasang Tailwind dengan benar. Dipilih **(b)** dengan alasan: CR-001 §3 mencatat Tailwind CSS sebagai bagian tabel dependensi terverifikasi (baris yang ternyata belum masuk ke RULES.md — drift yang kini diperbaiki), gaya utilitas konsisten dengan prototipe `desain-web`, dan RFC lanjutan (004–008) akan membangun banyak layar React dengan pola yang sama. **Catatan #3 di atas dianggap digantikan oleh catatan ini.**
+
+Perbaikan yang diterapkan:
+
+1. **Tailwind CSS v4.3.3 dipasang ulang** (`tailwindcss` + `@tailwindcss/vite`, keduanya diverifikasi via `npm view … version`; peer dependency `vite ^8` terpenuhi) dan didaftarkan di plugin `vite.config.js`.
+2. **Scan sumber dibatasi**: `@import 'tailwindcss' source(none)` + `@source '../js'` + `@source '../views'`. Tanpa ini, Tailwind ikut memindai compiled view Filament di `storage/framework/views/` dan prototipe `desain-web/` → CSS pelanggan membengkak 42 kB penuh utility mati (`dark:`, `bg-white`, dsb.). Hasil akhir: 8.7 kB berisi utility yang benar-benar dipakai.
+3. **UI-2 ditegakkan lewat konfigurasi**: `@theme { --shadow-*: initial; }` menghapus utilitas bawaan `.shadow` Tailwind yang memuat fallback `#0000001a` (utilitas itu terpicu oleh kata "shadow" di komentar sumber mana pun — terdeteksi lewat eksperimen build terisolasi). `Card.jsx` juga berpindah dari arbitrary `shadow-[var(--shadow-tactile-md)]` ke class `.marker-shadow-md` milik `tactile.css`. Build final: **nol kemunculan `#000000`** (dibuktikan test).
+4. **Class mati di `app.blade.php`** (`bg-surface font-body` pada `<body>`) dihapus — `app.css` sudah mengatur body; Tailwind v4 tidak punya token `bg-surface` tanpa `@theme` warna.
+5. **Test palsu dihapus.** `tests/Unit/FormatRupiahTest.php` mendefinisikan `formatRupiah()` miliknya sendiri lalu menguji fungsi itu (akan tetap lulus jika utilitas JS asli dihapus) — melanggar CODE-3. Digantikan `tests/Unit/BadgeEnumTest.php` (unit test nyata); TC-001-2 tetap tercakup oleh `tests/JS/formatRupiah.test.js` (5/5 lulus via `npm test`).
+6. **TC-001-3 kini ada**: `tests/Feature/TokenCssVisualTest.php` memverifikasi font Epilogue/Nunito Sans pada respons `/` serta isi stylesheet hasil build (token `#FFF9EF`/`#4A2C17`, hard shadow `3px 3px 0`, press `1px 1px 0`, utility `.rounded-xl` terkompilasi — regresi persis pada kegagalan Round 1 — dan bebas `#000000`). Deviasi tipe test: verifikasi gaya dilakukan terhadap stylesheet terbangun + respons HTML alih-alih computed style peramban langsung (Dusk tersedia sebagai opsi visual E2E di RFC-008).
+7. **`RootPageTest` dirapikan**: memakai nama method `test_*` (menghapus deprecation PHPUnit 12 tentang metadata doc-comment) dan `withoutVite()` agar tidak bergantung pada manifest build lokal.
+
+Verifikasi Round 1: `php artisan test` **20/20 lulus (90 assertions)**, `npm test` 5/5 lulus, `npm run build` sukses (CSS 8.7 kB, nol `#000000`), `vendor/bin/pint --test` **passed** (seluruh repo), `php artisan migrate:fresh --seed` bersih.

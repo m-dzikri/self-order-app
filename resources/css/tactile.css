@@ -3,15 +3,15 @@
  * Hard shadows and press displacement only; no blur, no glow (UI-4).
  */
 
-.shadow-tactile-sm {
+.marker-shadow-sm {
     box-shadow: var(--shadow-tactile-sm);
 }
 
-.shadow-tactile-md {
+.marker-shadow-md {
     box-shadow: var(--shadow-tactile-md);
 }
 
-.shadow-tactile-lg {
+.marker-shadow-lg {
     box-shadow: var(--shadow-tactile-lg);
 }
 
