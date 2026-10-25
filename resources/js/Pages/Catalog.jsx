@@ -120,7 +120,7 @@ export default function Catalog({ appName = 'Kopi Corat-Coret', categories = [],
 
                 {/* Cart Icon CTA (links to RFC-005 Cart) */}
                 <Link
-                    href="#cart"
+                    href="/keranjang"
                     aria-label={`Keranjang belanja, ${cartCount} item`}
                     className="relative flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border-2 border-[var(--color-ink)] bg-[var(--color-surface-container-low)] text-xl marker-shadow-md hover:bg-[var(--color-surface-container)] active:translate-x-0.5 active:translate-y-0.5"
                 >
@@ -196,6 +196,29 @@ export default function Catalog({ appName = 'Kopi Corat-Coret', categories = [],
                 onClose={() => setActiveCustomizerMenu(null)}
                 onAddToCart={handleAddToCart}
             />
+
+            {/* Floating Cart Dock (RFC-005, UI-6) */}
+            {cartCount > 0 ? (
+                <div className="fixed bottom-4 left-4 right-4 z-40 mx-auto max-w-[448px]">
+                    <Link
+                        href="/keranjang"
+                        className="btn-tactile flex min-h-[50px] items-center justify-between rounded-2xl border-2 border-[var(--color-ink)] bg-[var(--color-primary)] px-4 py-3 font-extrabold text-sm text-[var(--color-ink)] marker-shadow-lg active:translate-y-0.5"
+                    >
+                        <div className="flex items-center gap-2">
+                            <span className="flex h-6 w-6 items-center justify-center rounded-full border border-[var(--color-ink)] bg-[var(--color-promo)] text-xs text-[var(--color-surface)] shadow-[1px_1px_0px_var(--color-ink)]">
+                                {cartCount}
+                            </span>
+                            <span>Lihat Sketsa Pesanan</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <span>Ke Nota</span>
+                            <span aria-hidden="true" className="material-symbols-outlined text-[18px]">
+                                arrow_forward
+                            </span>
+                        </div>
+                    </Link>
+                </div>
+            ) : null}
         </AppLayout>
     );
 }

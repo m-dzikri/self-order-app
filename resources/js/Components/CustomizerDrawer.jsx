@@ -1,12 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { formatRupiah } from '../Utils/formatRupiah';
 import { calculateItemTotal } from '../Utils/calculateItemTotal';
 
 /**
- * CustomizerDrawer Component (RFC-004 F8, F9, F10, F11):
+ * CustomizerDrawer Component (RFC-004 F8, F9, F10, F11, RFC-005 F12):
  * Bottom sheet modal for drink & food modifiers, toppings, barista notes, quantity stepper, and live subtotal.
  */
-export default function CustomizerDrawer({ menu, isOpen, onClose, onAddToCart }) {
+export default function CustomizerDrawer({ menu, isOpen, onClose, onAddToCart, initialPayload = null }) {
     if (!isOpen || !menu) return null;
 
     const isDrink = menu.category?.slug === 'kopi-susu' || menu.category?.slug === 'manual-brew' || menu.category?.slug === 'non-kopi';
@@ -42,6 +42,38 @@ export default function CustomizerDrawer({ menu, isOpen, onClose, onAddToCart })
 
     // Barista notes
     const [notes, setNotes] = useState('');
+
+    // Pre-populate when initialPayload is passed (e.g. Editing variant in Cart F12)
+    useEffect(() => {
+        if (!isOpen) return;
+        if (initialPayload) {
+            if (initialPayload.temperature) setTemperature(initialPayload.temperature);
+            if (initialPayload.sugarLevel) setSugarLevel(initialPayload.sugarLevel);
+            if (initialPayload.spiceLevel) setSpiceLevel(initialPayload.spiceLevel);
+            if (initialPayload.eggOption) setEggOption(initialPayload.eggOption);
+            if (initialPayload.milk) {
+                const foundMilk = milkOptions.find((m) => m.name === initialPayload.milk.name);
+                setSelectedMilk(foundMilk || initialPayload.milk);
+            }
+            if (Array.isArray(initialPayload.toppings)) {
+                const foundToppings = toppingOptions.filter((t) =>
+                    initialPayload.toppings.some((pt) => pt.name === t.name)
+                );
+                setSelectedToppings(foundToppings.length > 0 ? foundToppings : initialPayload.toppings);
+            }
+            if (initialPayload.quantity) setQuantity(Number(initialPayload.quantity));
+            if (initialPayload.notes !== undefined) setNotes(initialPayload.notes);
+        } else {
+            setTemperature('ice');
+            setSugarLevel('100');
+            setSpiceLevel('level-1');
+            setEggOption('setengah-matang');
+            setSelectedMilk(defaultMilk);
+            setSelectedToppings([]);
+            setQuantity(1);
+            setNotes('');
+        }
+    }, [isOpen, initialPayload, menu]);
 
     // Toggle topping
     const toggleTopping = (topping) => {
@@ -369,7 +401,10 @@ export default function CustomizerDrawer({ menu, isOpen, onClose, onAddToCart })
                         onClick={handleAddToCart}
                         className="btn-tactile flex-1 flex min-h-[44px] items-center justify-center gap-2 rounded-xl border-2 border-[var(--color-ink)] bg-[var(--color-primary)] px-4 py-2 font-extrabold text-sm text-[var(--color-ink)]"
                     >
-                        <span>Tambah • {formatRupiah(pricing.totalPrice)}</span>
+                        <span>
+                            {initialPayload ? 'Simpan • ' : 'Tambah • '}
+                            {formatRupiah(pricing.totalPrice)}
+                        </span>
                     </button>
                 </div>
             </div>
