@@ -11,9 +11,9 @@ return new class extends Migration
         Schema::create('menu_modifiers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('menu_id')->constrained()->cascadeOnDelete();
-            $table->string('type'); // e.g., 'susu', 'topping'
+            $table->string('type');
             $table->string('name');
-            $table->integer('extra_price'); // stored in Rupiah (e.g. 6000 = +Rp 6.000)
+            $table->unsignedInteger('extra_price')->default(0);
             $table->timestamps();
         });
     }

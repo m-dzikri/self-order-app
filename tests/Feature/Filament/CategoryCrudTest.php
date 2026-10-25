@@ -4,6 +4,7 @@ namespace Tests\Feature\Filament;
 
 use App\Filament\Resources\CategoryResource\Pages\CreateCategory;
 use App\Filament\Resources\CategoryResource\Pages\EditCategory;
+use App\Filament\Resources\CategoryResource\Pages\ListCategories;
 use App\Models\Category;
 use App\Models\User;
 use Database\Seeders\CategorySeeder;
@@ -15,78 +16,101 @@ class CategoryCrudTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function admin(): User
+    private User $admin;
+
+    protected function setUp(): void
     {
-        return User::factory()->create();
+        parent::setUp();
+        $this->admin = User::factory()->create();
     }
 
     public function test_admin_panel_requires_authentication(): void
     {
-        $this->get('/admin')->assertRedirect('/admin/login');
+        $response = $this->get('/admin/categories');
+        $response->assertRedirect('/admin/login');
     }
 
     public function test_admin_can_create_category(): void
     {
-        $this->actingAs($this->admin());
+        $this->actingAs($this->admin);
 
         Livewire::test(CreateCategory::class)
             ->fillForm([
                 'name' => 'Manual Brew',
                 'slug' => 'manual-brew',
-                'sort_order' => 6,
+                'sort_order' => 2,
                 'is_active' => true,
             ])
-            ->call('create');
+            ->call('create')
+            ->assertHasNoFormErrors();
 
         $this->assertDatabaseHas('categories', [
             'name' => 'Manual Brew',
             'slug' => 'manual-brew',
-            'sort_order' => 6,
+            'sort_order' => 2,
             'is_active' => true,
         ]);
     }
 
     public function test_category_form_rejects_empty_name(): void
     {
-        $this->actingAs($this->admin());
+        $this->actingAs($this->admin);
 
         Livewire::test(CreateCategory::class)
             ->fillForm([
                 'name' => '',
-                'slug' => 'tanpa-nama',
-                'sort_order' => 1,
-                'is_active' => true,
+                'slug' => 'manual-brew',
             ])
             ->call('create')
             ->assertHasFormErrors(['name' => 'required']);
 
-        $this->assertDatabaseCount('categories', 0);
+        $this->assertDatabaseMissing('categories', [
+            'slug' => 'manual-brew',
+        ]);
     }
 
     public function test_admin_can_update_category_sort_order(): void
     {
+        $this->actingAs($this->admin);
+
         $category = Category::create([
-            'name' => 'Camilan',
-            'slug' => 'camilan',
-            'sort_order' => 4,
+            'name' => 'Kopi Susu',
+            'slug' => 'kopi-susu',
+            'sort_order' => 1,
             'is_active' => true,
         ]);
 
-        $this->actingAs($this->admin());
-
-        Livewire::test(EditCategory::class, ['record' => $category->getKey()])
+        Livewire::test(EditCategory::class, ['record' => $category->getRouteKey()])
             ->fillForm([
-                'name' => 'Camilan',
-                'slug' => 'camilan',
-                'sort_order' => 9,
-                'is_active' => false,
+                'sort_order' => 10,
             ])
-            ->call('save');
+            ->call('save')
+            ->assertHasNoFormErrors();
 
         $this->assertDatabaseHas('categories', [
             'id' => $category->id,
-            'sort_order' => 9,
-            'is_active' => false,
+            'sort_order' => 10,
+        ]);
+    }
+
+    public function test_admin_can_render_category_list_and_delete_category(): void
+    {
+        $this->actingAs($this->admin);
+
+        $category = Category::create([
+            'name' => 'Seasonal Special',
+            'slug' => 'seasonal-special',
+            'sort_order' => 99,
+            'is_active' => true,
+        ]);
+
+        Livewire::test(ListCategories::class)
+            ->assertSuccessful()
+            ->assertCanSeeTableRecords([$category])
+            ->callTableAction('delete', $category);
+
+        $this->assertDatabaseMissing('categories', [
+            'id' => $category->id,
         ]);
     }
 

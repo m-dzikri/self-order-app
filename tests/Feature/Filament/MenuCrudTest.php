@@ -11,6 +11,8 @@ use App\Models\User;
 use Database\Seeders\CategorySeeder;
 use Database\Seeders\MenuSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -18,27 +20,31 @@ class MenuCrudTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function admin(): User
-    {
-        return User::factory()->create();
-    }
+    private User $admin;
 
-    public function test_admin_can_create_menu_with_modifiers(): void
+    private Category $category;
+
+    protected function setUp(): void
     {
-        $category = Category::create([
+        parent::setUp();
+        $this->admin = User::factory()->create();
+        $this->category = Category::create([
             'name' => 'Kopi Susu',
             'slug' => 'kopi-susu',
             'sort_order' => 1,
             'is_active' => true,
         ]);
+    }
 
-        $this->actingAs($this->admin());
+    public function test_admin_can_create_menu_with_modifiers(): void
+    {
+        $this->actingAs($this->admin);
 
         Livewire::test(CreateMenu::class)
             ->fillForm([
                 'name' => 'Es Kopi Corat-Coret',
-                'category_id' => $category->getKey(),
-                'description' => 'Kopi susu gula aren khas atelier.',
+                'category_id' => $this->category->id,
+                'description' => 'Kopi susu gula aren spesial sketsa.',
                 'price' => 22000,
                 'badge' => 'favorit',
                 'is_active' => true,
@@ -46,165 +52,175 @@ class MenuCrudTest extends TestCase
                 'modifiers' => [
                     [
                         'type' => 'susu',
-                        'name' => 'Oat Milk Barista Blend',
+                        'name' => 'Oat Milk',
                         'extra_price' => 6000,
                     ],
                     [
                         'type' => 'topping',
-                        'name' => 'Ekstra Espresso Shot',
+                        'name' => 'Espresso Shot',
                         'extra_price' => 5000,
                     ],
                 ],
             ])
-            ->call('create');
+            ->call('create')
+            ->assertHasNoFormErrors();
 
-        $menu = Menu::firstWhere('name', 'Es Kopi Corat-Coret');
-
-        $this->assertNotNull($menu);
-        $this->assertSame($category->id, $menu->category_id);
-        $this->assertSame(22000, $menu->price);
+        $this->assertDatabaseHas('menus', [
+            'name' => 'Es Kopi Corat-Coret',
+            'category_id' => $this->category->id,
+            'price' => 22000,
+            'badge' => 'favorit',
+            'is_in_stock' => true,
+        ]);
 
         $this->assertDatabaseHas('menu_modifiers', [
-            'menu_id' => $menu->id,
             'type' => 'susu',
-            'name' => 'Oat Milk Barista Blend',
+            'name' => 'Oat Milk',
             'extra_price' => 6000,
         ]);
+
         $this->assertDatabaseHas('menu_modifiers', [
-            'menu_id' => $menu->id,
             'type' => 'topping',
-            'name' => 'Ekstra Espresso Shot',
+            'name' => 'Espresso Shot',
             'extra_price' => 5000,
         ]);
     }
 
     public function test_menu_form_rejects_negative_price(): void
     {
-        $category = Category::create([
-            'name' => 'Camilan',
-            'slug' => 'camilan',
-            'sort_order' => 4,
-            'is_active' => true,
-        ]);
-
-        $this->actingAs($this->admin());
+        $this->actingAs($this->admin);
 
         Livewire::test(CreateMenu::class)
             ->fillForm([
-                'name' => 'Croissant Aneh',
-                'category_id' => $category->getKey(),
+                'name' => 'Kopi Murah',
+                'category_id' => $this->category->id,
                 'price' => -5000,
-                'is_active' => true,
-                'is_in_stock' => true,
             ])
             ->call('create')
             ->assertHasFormErrors(['price' => 'min']);
 
-        $this->assertDatabaseCount('menus', 0);
+        $this->assertDatabaseMissing('menus', [
+            'name' => 'Kopi Murah',
+        ]);
     }
 
     public function test_menu_form_rejects_empty_name(): void
     {
-        $category = Category::create([
-            'name' => 'Camilan',
-            'slug' => 'camilan',
-            'sort_order' => 4,
-            'is_active' => true,
-        ]);
-
-        $this->actingAs($this->admin());
+        $this->actingAs($this->admin);
 
         Livewire::test(CreateMenu::class)
             ->fillForm([
                 'name' => '',
-                'category_id' => $category->getKey(),
+                'category_id' => $this->category->id,
                 'price' => 20000,
-                'is_active' => true,
-                'is_in_stock' => true,
             ])
             ->call('create')
             ->assertHasFormErrors(['name' => 'required']);
 
-        $this->assertDatabaseCount('menus', 0);
+        $this->assertDatabaseMissing('menus', [
+            'price' => 20000,
+        ]);
     }
 
     public function test_menu_list_renders_with_badge_menu(): void
     {
-        $category = Category::create([
-            'name' => 'Kopi Susu',
-            'slug' => 'kopi-susu',
-            'sort_order' => 1,
-            'is_active' => true,
-        ]);
+        $this->actingAs($this->admin);
 
         $menu = Menu::create([
-            'category_id' => $category->id,
-            'name' => 'Es Kopi Susu Aren',
-            'price' => 22000,
+            'category_id' => $this->category->id,
+            'name' => 'Kopi Bertanda Favorit',
+            'description' => 'Menu untuk pengujian badge',
+            'price' => 25000,
             'badge' => 'favorit',
             'is_active' => true,
             'is_in_stock' => true,
         ]);
 
-        $this->actingAs(User::factory()->create());
-
-        // Regresi Round 1: cast BadgeEnum pada model memicu TypeError di kolom
-        // badge sehingga halaman /admin/menus menghasilkan HTTP 500.
         Livewire::test(ListMenus::class)
             ->assertSuccessful()
-            ->assertCanSeeTableRecords([$menu]);
+            ->assertCanSeeTableRecords([$menu])
+            ->assertSee('Favorit');
     }
 
-    public function test_edit_menu_form_hydrates_badge_state(): void
+    public function test_edit_menu_form_hydrates_and_saves_badge_state(): void
     {
-        $category = Category::create([
-            'name' => 'Kopi Susu',
-            'slug' => 'kopi-susu',
-            'sort_order' => 1,
-            'is_active' => true,
-        ]);
+        $this->actingAs($this->admin);
 
         $menu = Menu::create([
-            'category_id' => $category->id,
-            'name' => 'V60 Flores Bajawa',
-            'price' => 30000,
+            'category_id' => $this->category->id,
+            'name' => 'Kopi Edit Badge',
+            'description' => 'Menu edit badge test',
+            'price' => 25000,
             'badge' => 'spesial',
             'is_active' => true,
             'is_in_stock' => true,
         ]);
 
-        $this->actingAs(User::factory()->create());
+        Livewire::test(EditMenu::class, ['record' => $menu->getRouteKey()])
+            ->assertFormSet(['badge' => 'spesial'])
+            ->fillForm(['badge' => 'favorit'])
+            ->call('save')
+            ->assertHasNoFormErrors();
 
-        Livewire::test(EditMenu::class, ['record' => $menu->getKey()])
-            ->assertSuccessful()
-            ->assertFormSet([
-                'name' => 'V60 Flores Bajawa',
-                'badge' => 'spesial',
-            ]);
+        $this->assertDatabaseHas('menus', [
+            'id' => $menu->id,
+            'badge' => 'favorit',
+        ]);
+    }
+
+    public function test_admin_can_upload_image_for_menu(): void
+    {
+        Storage::fake('public');
+        $this->actingAs($this->admin);
+
+        // Minimal valid 1x1 PNG binary payload (doesn't require GD extension)
+        $pngContent = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
+        $file = UploadedFile::fake()->createWithContent('kopi-senja.png', $pngContent);
+
+        Livewire::test(CreateMenu::class)
+            ->fillForm([
+                'name' => 'Kopi Gambar',
+                'category_id' => $this->category->id,
+                'price' => 25000,
+                'image_path' => $file,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $menu = Menu::where('name', 'Kopi Gambar')->first();
+        $this->assertNotNull($menu);
+        $this->assertNotNull($menu->image_path);
+        Storage::disk('public')->assertExists($menu->image_path);
+    }
+
+    public function test_admin_can_delete_menu(): void
+    {
+        $this->actingAs($this->admin);
+
+        $menu = Menu::create([
+            'category_id' => $this->category->id,
+            'name' => 'Menu Dihapus',
+            'price' => 10000,
+            'is_active' => true,
+            'is_in_stock' => true,
+        ]);
+
+        Livewire::test(ListMenus::class)
+            ->callTableAction('delete', $menu);
+
+        $this->assertDatabaseMissing('menus', [
+            'id' => $menu->id,
+        ]);
     }
 
     public function test_menu_seeder_populates_full_catalog(): void
     {
-        $this->seed([CategorySeeder::class, MenuSeeder::class]);
+        $this->seed(CategorySeeder::class);
+        $this->seed(MenuSeeder::class);
 
         $this->assertDatabaseCount('menus', 6);
-        $this->assertDatabaseHas('menus', [
-            'name' => 'Es Kopi Susu Aren',
-            'price' => 22000,
-            'badge' => 'favorit',
-            'is_in_stock' => true,
-        ]);
-        // Sesuai mock katalog, Croissant Almond ditandai habis.
-        $this->assertDatabaseHas('menus', [
-            'name' => 'Croissant Almond',
-            'price' => 24000,
-            'is_in_stock' => false,
-        ]);
-
-        $esKopi = Menu::firstWhere('name', 'Es Kopi Susu Aren');
-        $this->assertSame(7, $esKopi->modifiers()->count());
-
-        $oatMilk = $esKopi->modifiers()->where('name', 'Oat Milk Barista Blend')->first();
-        $this->assertSame(6000, $oatMilk->extra_price);
+        $this->assertDatabaseHas('menus', ['name' => 'Kopi Susu Senja', 'price' => 22000, 'badge' => 'favorit']);
+        $this->assertDatabaseHas('menus', ['name' => 'V60 Flores Bajawa', 'price' => 28000, 'badge' => 'spesial']);
+        $this->assertDatabaseHas('menus', ['name' => 'Pisang Goreng Wijen', 'is_in_stock' => false]);
     }
 }

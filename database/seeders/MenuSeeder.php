@@ -2,108 +2,118 @@
 
 namespace Database\Seeders;
 
+use App\Enums\BadgeEnum;
 use App\Models\Category;
 use App\Models\Menu;
+use App\Models\MenuModifier;
 use Illuminate\Database\Seeder;
 
 class MenuSeeder extends Seeder
 {
-    /**
-     * Katalog menu awal sesuai mock data prototipe desain-web
-     * (02_katalog_menu & 03_kustomisasi_menu).
-     */
     public function run(): void
     {
-        $milkOptions = [
-            ['type' => 'susu', 'name' => 'Susu Sapi Segar (Fresh Milk)', 'extra_price' => 0],
-            ['type' => 'susu', 'name' => 'Oat Milk Barista Blend', 'extra_price' => 6000],
-            ['type' => 'susu', 'name' => 'Almond Milk', 'extra_price' => 7000],
-            ['type' => 'susu', 'name' => 'Soy Milk', 'extra_price' => 5000],
-        ];
-
-        $toppingOptions = [
-            ['type' => 'topping', 'name' => 'Ekstra Espresso Shot', 'extra_price' => 5000],
-            ['type' => 'topping', 'name' => 'Grass Jelly / Cincau Lembut', 'extra_price' => 4000],
-            ['type' => 'topping', 'name' => 'Coffee Jelly Cubes', 'extra_price' => 4000],
-        ];
+        $kopiSusu = Category::where('slug', 'kopi-susu')->first();
+        $manualBrew = Category::where('slug', 'manual-brew')->first();
+        $makanan = Category::where('slug', 'makanan-berat')->first();
+        $camilan = Category::where('slug', 'camilan')->first();
+        $nonKopi = Category::where('slug', 'non-kopi')->first();
 
         $menus = [
             [
-                'category' => 'kopi-susu',
-                'name' => 'Es Kopi Susu Aren',
-                'description' => 'Kopi susu gula aren khas atelier, disajikan dingin dengan es batu kristal.',
+                'category_id' => $kopiSusu?->id,
+                'name' => 'Kopi Susu Senja',
+                'description' => 'Espresso house blend dengan susu segar dan sentuhan sirup karamel bakar.',
                 'price' => 22000,
-                'badge' => 'favorit',
+                'badge' => BadgeEnum::FAVORIT->value,
+                'is_active' => true,
                 'is_in_stock' => true,
-                'modifiers' => array_merge($milkOptions, $toppingOptions),
+                'modifiers' => [
+                    ['type' => 'susu', 'name' => 'Fresh Milk', 'extra_price' => 0],
+                    ['type' => 'susu', 'name' => 'Oat Milk', 'extra_price' => 6000],
+                    ['type' => 'susu', 'name' => 'Almond Milk', 'extra_price' => 8000],
+                    ['type' => 'topping', 'name' => 'Extra Espresso Shot', 'extra_price' => 5000],
+                    ['type' => 'topping', 'name' => 'Grass Jelly', 'extra_price' => 4000],
+                ],
             ],
             [
-                'category' => 'kopi-susu',
-                'name' => 'Caffe Latte Sketsa',
-                'description' => 'Latte dengan busa susu lembut dan goresan latte art ala sketsa.',
+                'category_id' => $manualBrew?->id,
+                'name' => 'V60 Flores Bajawa',
+                'description' => 'Single origin Flores Bajawa dengan citarasa chocolatey, citrus hints, and nutty finish.',
+                'price' => 28000,
+                'badge' => BadgeEnum::SPESIAL->value,
+                'is_active' => true,
+                'is_in_stock' => true,
+                'modifiers' => [],
+            ],
+            [
+                'category_id' => $makanan?->id,
+                'name' => 'Nasi Goreng Corat-Coret',
+                'description' => 'Nasi goreng bumbu rempah khas dengan suwiran ayam kampung, telur ceplok setengah matang, dan kerupuk udang.',
+                'price' => 32000,
+                'badge' => BadgeEnum::FAVORIT->value,
+                'is_active' => true,
+                'is_in_stock' => true,
+                'modifiers' => [
+                    ['type' => 'topping', 'name' => 'Ekstra Telur Ceplok', 'extra_price' => 5000],
+                    ['type' => 'topping', 'name' => 'Sosis Sapi Panggang', 'extra_price' => 7000],
+                ],
+            ],
+            [
+                'category_id' => $camilan?->id,
+                'name' => 'Croissant Almond',
+                'description' => 'Pastry renyah berlapis dengan isian krim almond manis dan taburan almond panggang.',
+                'price' => 25000,
+                'badge' => null,
+                'is_active' => true,
+                'is_in_stock' => true,
+                'modifiers' => [],
+            ],
+            [
+                'category_id' => $camilan?->id,
+                'name' => 'Pisang Goreng Wijen',
+                'description' => 'Pisang kepok manis digoreng tepung wijen renyah, disajikan dengan cocolan saus karamel.',
+                'price' => 18000,
+                'badge' => null,
+                'is_active' => true,
+                'is_in_stock' => false,
+                'modifiers' => [
+                    ['type' => 'topping', 'name' => 'Ekstra Saus Karamel', 'extra_price' => 3000],
+                ],
+            ],
+            [
+                'category_id' => $nonKopi?->id,
+                'name' => 'Matcha Latte Kyoto',
+                'description' => 'Bubuk matcha murni dari Uji, Kyoto berpadu lembut dengan susu segar steamed.',
                 'price' => 26000,
                 'badge' => null,
+                'is_active' => true,
                 'is_in_stock' => true,
-                'modifiers' => $milkOptions,
-            ],
-            [
-                'category' => 'manual-brew',
-                'name' => 'V60 Flores Bajawa',
-                'description' => 'Single origin Flores Bajawa, seduh manual dengan profil rasa cokelat dan kacang.',
-                'price' => 30000,
-                'badge' => 'spesial',
-                'is_in_stock' => true,
-                'modifiers' => [],
-            ],
-            [
-                'category' => 'makanan-berat',
-                'name' => 'Mie Goreng Corat-Coret',
-                'description' => 'Mie goreng jawa dengan telur mata sapi dan taburan bawang goreng.',
-                'price' => 28000,
-                'badge' => 'favorit',
-                'is_in_stock' => true,
-                'modifiers' => [],
-            ],
-            [
-                'category' => 'camilan',
-                'name' => 'Croissant Almond',
-                'description' => 'Croissant renyah berlapis isian almond manis.',
-                'price' => 24000,
-                'badge' => null,
-                // Sesuai mock katalog: item ini ditandai "Habis".
-                'is_in_stock' => false,
-                'modifiers' => [],
-            ],
-            [
-                'category' => 'camilan',
-                'name' => 'Pisang Goreng Keju',
-                'description' => 'Pisang goreng krispi dengan parutan keju dan madu.',
-                'price' => 20000,
-                'badge' => null,
-                'is_in_stock' => true,
-                'modifiers' => [],
+                'modifiers' => [
+                    ['type' => 'susu', 'name' => 'Fresh Milk', 'extra_price' => 0],
+                    ['type' => 'susu', 'name' => 'Oat Milk', 'extra_price' => 6000],
+                    ['type' => 'topping', 'name' => 'Matcha Ice Cream Scoop', 'extra_price' => 8000],
+                ],
             ],
         ];
 
-        foreach ($menus as $menu) {
-            $category = Category::where('slug', $menu['category'])->firstOrFail();
+        foreach ($menus as $menuData) {
+            $modifiers = $menuData['modifiers'] ?? [];
+            unset($menuData['modifiers']);
 
-            $record = Menu::updateOrCreate(
-                ['name' => $menu['name']],
-                [
-                    'category_id' => $category->id,
-                    'description' => $menu['description'],
-                    'price' => $menu['price'],
-                    'badge' => $menu['badge'],
-                    'is_active' => true,
-                    'is_in_stock' => $menu['is_in_stock'],
-                ]
+            $menu = Menu::query()->updateOrCreate(
+                ['name' => $menuData['name']],
+                $menuData
             );
 
-            $record->modifiers()->delete();
+            $menu->modifiers()->delete();
 
-            foreach ($menu['modifiers'] as $modifier) {
-                $record->modifiers()->create($modifier);
+            foreach ($modifiers as $modifier) {
+                MenuModifier::query()->create([
+                    'menu_id' => $menu->id,
+                    'type' => $modifier['type'],
+                    'name' => $modifier['name'],
+                    'extra_price' => $modifier['extra_price'],
+                ]);
             }
         }
     }

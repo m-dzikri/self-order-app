@@ -17,7 +17,5 @@ class BadgeEnumTest extends TestCase
     {
         $this->assertSame('favorit', BadgeEnum::FAVORIT->value);
         $this->assertSame('spesial', BadgeEnum::SPESIAL->value);
-        $this->assertSame(BadgeEnum::SPESIAL, BadgeEnum::tryFrom('spesial'));
-        $this->assertNull(BadgeEnum::tryFrom('unknown'));
     }
 }

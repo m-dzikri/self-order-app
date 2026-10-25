@@ -3,12 +3,15 @@
 namespace App\Models;
 
 use App\Enums\BadgeEnum;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Menu extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'category_id',
         'name',
@@ -22,7 +25,7 @@ class Menu extends Model
 
     protected $casts = [
         'price' => 'integer',
-        'badge' => BadgeEnum::class, // nullable enum casting
+        'badge' => BadgeEnum::class,
         'is_active' => 'boolean',
         'is_in_stock' => 'boolean',
     ];

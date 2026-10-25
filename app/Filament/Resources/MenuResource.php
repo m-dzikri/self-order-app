@@ -141,7 +141,6 @@ class MenuResource extends Resource
                     ->label('Badge')
                     ->badge()
                     ->formatStateUsing(
-                        // State datang sebagai BadgeEnum (cast model) atau string mentah.
                         fn (BadgeEnum|string|null $state): ?string => match (true) {
                             $state instanceof BadgeEnum => $state->label(),
                             is_string($state) => BadgeEnum::tryFrom($state)?->label(),

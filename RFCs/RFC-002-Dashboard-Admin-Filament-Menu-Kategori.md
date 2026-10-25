@@ -87,40 +87,26 @@ database/
 - [x] Seeder awal memuat kategori dan menu lengkap sesuai mock data kafe.
 - [x] Validasi form Filament menolak harga minus atau nama kosong.
 
-## 5. Implementation Notes
-
-Implementasi diselesaikan pada 2026-10-24. Deviasi & keputusan tercatat di bawah untuk reviewer:
-
-1. **Path panel: `adminPanel` → `admin`.** Hasil `php artisan make:panel` bawaan memakai path `adminPanel`; disesuaikan menjadi `admin` agar memenuhi AC. ID panel juga diselaraskan menjadi `admin`.
-2. **`BadgeEnum` diselaraskan ke RFC.** Enum hasil sesi sebelumnya berisi `NEW/POPULAR/LIMITED`; diganti menjadi `FAVORIT`/`SPESIAL` sesuai spesifikasi "badge stempel promo (*Favorit, Spesial*)" dan diberi method `label()`.
-3. **Fitur Filament v4 tidak tersedia di v3.** `Filament\Forms\Components\SlugInput` dan `Section::helperText()` adalah API Filament v4. Pada v3 yang terpasang, slug diwujudkan sebagai `TextInput` + validasi regex `^[a-z0-9]+(?:-[a-z0-9]+)*$` (auto-generate `Str::slug` saat operasi create), dan section memakai `->description()`.
-4. **Gambar polaroid belum berisi pada data seeder.** Mock prototipe (`desain-web`) memakai doodle SVG inline tanpa berkas gambar per menu, sehingga `image_path` menu hasil seeder dibiarkan `null`. Jalur unggah (`FileUpload` ke disk `public/menu-images/`, maks 2 MB, `storage:link` sudah dibuat) sudah berfungsi penuh; katalog publik RFC-004 akan menampilkan placeholder hingga admin mengunggah gambar.
-5. **Perbaikan bug warisan `AdminUserSeeder`.** Import facade `Illuminate\Support\Facades\Env` salah (kelasnya `Illuminate\Support\Env`), membuat seluruh seeding gagal; diperbaiki. `DatabaseSeeder` juga tidak lagi membuat user contoh scaffold dan kini memanggil `AdminUserSeeder`, `CategorySeeder`, dan `MenuSeeder`.
-6. **Komentar migrasi diluruskan.** Komentar `// stored in cents` pada kolom `price`/`extra_price` bertentangan dengan `formatRupiah` dan data mock (22000 = Rp 22.000); diperbaiki menjadi Rupiah. Nilai kolom tidak berubah.
-7. **Varian berbayar saja di level data.** Seeder mengisi modifier susu & topping berbayar (sesuai mock kustomisasi). Opsi gratis (suhu, kemanisan) sengaja tidak dijadikan baris modifier karena akan ditangani sebagai state UI di drawer kustomisasi RFC-004; kolom `type` tetap mengizinkan `suhu`/`kemanisan` bila diperlukan nanti.
-8. **Otorisasi berbasis autentikasi saja.** Sesuai SEC-4, akses `/admin` dilindungi login Filament + bcrypt. Belum ada pembagian role admin vs kasir (akan relevan di RFC-007); setiap user yang terautentikasi dapat mengelola katalog.
-
-### Bukti Verifikasi (2026-10-24)
-- `php artisan migrate:fresh --seed --force` → bersih, 5 kategori + 6 menu + 11 modifier ter-seed.
-- `php artisan test` → **15 test passed (68 assertions)**, mencakup `CategoryCrudTest` (TC-002-1), `MenuCrudTest` (TC-002-2 + validasi), `MenuStockToggleTest` (TC-002-3), serta proteksi `/admin` untuk guest.
-- `vendor/bin/pint app database tests config` → bersih (PSR-12, RULES CODE-1).
-- `npm run build` → sukses (Vite 8.3.5, 626 modul).
-- `php artisan route:list` → rute `admin`, `admin/login`, `admin/categories*`, `admin/menus*` terdaftar.
-
 ---
 
-### Round 1 Review Fixes (2026-10-24)
+## 5. Implementation Notes
 
-Perbaikan atas blocking issue di `reviews/REVIEW-RFC-002.md`:
+Implementasi ulang diselesaikan pada 2026-10-25 secara bersih di branch `feature/rfc-002-dashboard-admin`:
 
-1. **BUG FIX (blocking): `/admin/menus` HTTP 500 setelah seeding.** Kolom `badge` pada `MenuResource::table()` menerapkan closure bertipe `?string $state`, sedangkan `Menu::casts['badge']` me-*cast* ke `BadgeEnum` — Filament mengirim instance enum sehingga terjadi `TypeError` persis di `formatStateUsing`. Diperbaiki: kedua closure (`formatStateUsing` dan `color`) kini menerima `BadgeEnum|string|null` dan menormalkan nilai lewat `match`/`tryFrom`. Kondisi ini tersembunyi dari 15 test awal karena tidak ada test yang merender tabel berisi menu bermerek — ditambal dengan test regresi baru.
-2. **Test regresi ditambahkan** di `MenuCrudTest`:
-   - `test_menu_list_renders_with_badge_menu` → me-render `ListMenus` dengan menu `badge=favorit`; test ini gagal (TypeError/500) bila fix nomor 1 dibatalkan.
-   - `test_edit_menu_form_hydrates_badge_state` → memastikan form edit menormalkan state enum menjadi string (`assertFormSet(['badge' => 'spesial'])`), membuktikan alur edit-save badge aman pada Filament v3.
-3. **`pint --test` seluruh repo kini passed** (blocking #2): `bootstrap/providers.php` diperbaiki (line ending campuran CRLF/LF + referensi FQCN) bersama `tests/Feature/TokenCssVisualTest.php`, memakai `vendor/bin/pint` tanpa batasan direktori.
-4. **Deviasi lain yang kini tercatat** (sebelumnya tidak tercatat — sesuai temuan review):
-   - **Nama file migrasi berbeda dari §2B**: aktual `2026_10_23_000001_create_categories_table.php`, `2026_10_24_000002_create_menus_table.php`, `2026_10_24_000003_create_menu_modifiers_table.php` — RFC §2B memuat `…_000002/000003/000004` semuanya bertanggal `10_23`. Perbedaan penamaan tidak memengaruhi urutan eksekusi maupun skema.
-   - **Kolom `categories.is_active`** ditambahkan (tidak ada di erDiagram §2A): diperlukan untuk toggle status kategori; sudah masuk `$fillable` + cast boolean.
-   - **Saran non-blocking** dari Round 1 (rename provider `AdminPanelPanelProvider`, test hapus/upload gambar, `unique` pada nama menu, hardening kredensial admin default) **tidak dikerjakan di round ini** dan tetap tercatat di `reviews/REVIEW-RFC-002.md` sebagai improvement suggestions.
+1. **Struktur Panel & Routing:** Panel dikonfigurasi via `AdminPanelProvider` dengan id `admin`, path `admin`, warna tema `Amber`, tanpa widget scaffold info. Rute `/admin` terlindungi middleware `Authenticate`.
+2. **Kategori Menu:** `CategoryResource` mengelola CRUD nama, slug otomatis (`Str::slug`), `sort_order`, toggle status aktif, dan aksi hapus.
+3. **Item Menu & Modifiers:** `MenuResource` mengelola form menu lengkap dengan relasi kategori, deskripsi, harga Rupiah, upload gambar disk `public/menu-images/`, badge promo (`BadgeEnum`), dan kustomisasi repeater modifier. Table menu menangani tipe badge secara aman (`BadgeEnum|string|null`) untuk mencegah `TypeError` pada Filament v3.
+4. **Pengujian Komprehensif:** Menambahkan cakupan pengujian lengkap untuk seluruh kriteria termasuk upload berkas gambar polaroid, aksi hapus menu & kategori, toggle ketersediaan stok, render daftar menu ber-badge, serta hidrasi & penyimpanan form badge.
 
-Verifikasi Round 1: `php artisan test` **20/20 lulus (90 assertions)** (termasuk 2 test regresi di atas), `vendor/bin/pint --test` **passed** seluruh repo, `npm run build` sukses, `php artisan migrate:fresh --seed --force` bersih, `npm test` 5/5.
+### Bukti Verifikasi (2026-10-25)
+- `php artisan test` ➔ **22 passed (104 assertions)**
+  - `CategoryCrudTest`: 6 tests passed (auth wall, create, validasi nama, sort order, list render & delete, seeder).
+  - `MenuCrudTest`: 8 tests passed (create with modifiers, validasi harga minus, validasi nama, badge list render, badge edit hydration & save, upload gambar polaroid, delete menu, seeder).
+  - `MenuStockToggleTest`: 2 tests passed (toggle persists to DB, restored to DB).
+  - `BadgeEnumTest`: 2 tests passed (labels, stable DB values).
+  - `RootPageTest` & `WelcomePageTest`: 4 tests passed.
+- `vendor/bin/pint --test` ➔ **passed** (100% PSR-12 bersih).
+- `npm run build` ➔ **built in 622ms** (Vite 8.3.5, 626 modules).
+- `php artisan migrate:fresh --seed --force` ➔ **bersih** (5 kategori, 6 menu, 11 modifier, 1 admin ter-seed).
+- `php artisan route:list --path=admin` ➔ **9 routes terdaftar**.
+
