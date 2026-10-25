@@ -10,7 +10,7 @@ export default function Catalog({ appName }) {
     return (
         <AppLayout>
             <header className="mb-6">
-                <p className="text-sm font-bold uppercase tracking-wide text-[var(--color-outline)]">
+                <p className="text-sm font-bold uppercase tracking-wide text-[var(--color-ink-soft)]">
                     {appName}
                 </p>
                 <h1 className="text-[26px] leading-[34px] font-extrabold">Katalog Menu</h1>

@@ -115,7 +115,7 @@ Implementasi selesai (2026-10-24). Catatan deviasi dari isi RFC:
 
 Perbaikan atas blocking issue di `reviews/REVIEW-RFC-003.md`:
 
-1. **Kontras WCAG AA (blocking #1).** Teks banner promo, kode kupon, dan aksen headline sebelumnya krem/jingga-di-atas-jingga (2,45–2,57:1). Diperbaiki: teks promo & kupon → espresso `--color-ink` (4,92:1 dan 12,62:1 — mengikuti prototipe yang memang memakai teks gelap), aksen headline → teks ink dengan highlighter `--color-primary`, subtitle & label memo → `--color-ink-soft` (8,88:1). Semua pasangan dihitung ulang dan lulus AA (≥4,5:1).
+1. **Kontras WCAG AA (blocking #1).** Teks banner promo, kode kupon, dan aksen headline sebelumnya krem/jingga-di-atas-jingga (2,45–2,57:1). Diperbaiki: teks promo & kupon → espresso `--color-ink` (4,92:1 dan 12,62:1 — mengikuti prototipe yang memang memakai teks gelap), aksen headline → teks ink dengan highlighter `--color-primary` (8,22:1), subtitle & label memo → `--color-ink-soft` (8,88:1). Seluruh pasangan teks/latar di komponen baru dihitung ulang dan lulus AA (≥4,5:1 untuk teks normal).
 2. **Touch target (blocking #1).** Tombol "Ubah data pesan bawa pulang" ~37px → `min-h-[44px]`.
 3. **Guard AC-5 + wiring AC-2/4/6 (blocking #2).** Test baru `test_welcome_bundle_renders_promo_voucher` dan `test_welcome_bundle_wires_takeaway_form_and_catalog_cta` meng-assert isi bundel Welcome terbangun (`SKETCHKOPI`, `Diskon 10%`, `/session/takeaway`, `/katalog`, `ngopiyuk123`) — mengikuti pola `TokenCssVisualTest`; gagal jika komponen dihapus atau wiring diputus. Klaim bukti di atas diperbaiki (sebelumnya keliru menyebut AC-5 tercakup).
 4. **SEC-1 FormRequest (blocking #3).** Validasi + sanitasi dipindah ke `app/Http/Requests/StoreTakeawayRequest.php`: `prepareForValidation` melakukan `strip_tags`+`trim` (pola double-validate di controller dihapus), aturan SEC-2 + pesan error + closure pickup 10-menit pindah ke sana.
@@ -124,3 +124,15 @@ Perbaikan atas blocking issue di `reviews/REVIEW-RFC-003.md`:
 7. **Tercatat, tidak dikerjakan di round ini**: `config('app.timezone')` masih `UTC` sedangkan kafe beroperasi WIB — belum berdampak (validasi pickup server lebih permisif untuk WIB), tetapi **harus diset `Asia/Jakarta` sebelum RFC-005/006** memakai perbandingan waktu `pickup_at`. Duplikasi `RootPageTest`/`WelcomePageTest` (dari RFC-001) tetap ada — cleanup di RFC berikutnya. Fokus-trap penuh pada modal ditunda ke RFC-008 (Dusk).
 
 Verifikasi Round 1: `php artisan test` **38/38 lulus (239 assertions)**, `npm test` 18/18, `npm run build` sukses (nol `#000000`), `vendor/bin/pint --test` **passed**.
+
+---
+
+### Round 2 Review Fixes (2026-10-25)
+
+Perbaikan atas satu blocking issue Round 2 di `reviews/REVIEW-RFC-003.md`:
+
+1. **Kontras halaman katalog (blocking).** `Catalog.jsx` memakai `--color-outline` untuk label "Kopi Corat-Coret" = 4,27:1 pada 14px — pasangan yang sama persis dengan blocking Round 1, terlewat di halaman placeholder. Diganti `--color-ink-soft` (**8,88:1**, lulus AA).
+2. **Klaim angka di catatan perbaikan Round 1 dikoreksi.** Angka "11,30:1" untuk aksen headline tidak akurat (angka sebenarnya **8,22:1** — tetap lulus AA), dan redaksi "semua pasangan dihitung ulang dan lulus AA" dirapikan menjadi "seluruh pasangan teks/latar di komponen baru" agar akurat (angka dikonfirmasi ulang oleh reviewer Round 2 dengan menghitung 33 pasangan secara independen).
+3. **Region "Tersalin!" difungsikan** (saran non-blocking Round 2): sebelumnya region `aria-live` berisi teks statis + toggle `opacity` — struktural benar tetapi tidak pernah mengumumkan apa pun ke pembaca layar dan meninggalkan "Tersalin!" phantom di accessibility tree. Kini region selalu ter-mount namun **kosong** sampai copy berhasil (`{copied ? 'Tersalin! ✨' : ''}`), sehingga perubahan konten benar-benar ter-announce dan teks tidak muncul sebelum waktunya.
+
+Verifikasi Round 2: `php artisan test` **38/38 lulus (239 assertions)**, `npm test` 18/18, `npm run build` sukses (nol `#000000`), `vendor/bin/pint --test` **passed**.

@@ -56,18 +56,20 @@ export default function WifiMemoCard({ ssid = 'CoratCoret_Guest', password = WIF
                 </button>
             </div>
 
-            {/* "Tersalin!" stamp doodle (F4 feedback); aria-live region stays
-                mounted so assistive tech reliably announces the copy. */}
+            {/* "Tersalin!" stamp doodle (F4 feedback). The aria-live region is
+                always mounted but EMPTY until copy succeeds, so assistive tech
+                announces the text when it actually changes — no phantom
+                "Tersalin!" sits in the accessibility tree beforehand. */}
             <p
                 aria-live="polite"
-                className={`pointer-events-none absolute -right-2 -top-3 -rotate-[8deg] rounded-lg border-2 px-3 py-1 text-[16px] font-extrabold transition-opacity ${
+                className={`pointer-events-none absolute -right-2 -top-3 -rotate-[8deg] rounded-lg px-3 py-1 text-[16px] font-extrabold ${
                     copied
-                        ? 'border-[var(--color-promo)] bg-[var(--color-surface)] text-[var(--color-ink)] opacity-100'
-                        : 'opacity-0'
+                        ? 'border-2 border-[var(--color-promo)] bg-[var(--color-surface)] text-[var(--color-ink)]'
+                        : ''
                 }`}
                 role="status"
             >
-                Tersalin! ✨
+                {copied ? 'Tersalin! ✨' : ''}
             </p>
         </div>
     );
