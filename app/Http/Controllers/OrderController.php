@@ -51,6 +51,7 @@ class OrderController extends Controller
         }
 
         return DB::transaction(function () use (
+            $request,
             $validated,
             $sessionType,
             $tableNumber,
@@ -169,6 +170,12 @@ class OrderController extends Controller
             foreach ($preparedItems as $item) {
                 $order->items()->create($item);
             }
+
+            // Save active order to customer session for tracker isolation (SEC-3, RFC-007)
+            $activeOrders = $request->session()->get('active_order_ids', []);
+            $activeOrders[] = $order->id;
+            $request->session()->put('active_order_ids', array_values(array_unique($activeOrders)));
+            $request->session()->put('current_order_id', $order->id);
 
             return response()->json([
                 'success' => true,
