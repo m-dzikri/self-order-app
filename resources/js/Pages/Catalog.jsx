@@ -6,6 +6,7 @@ import CategoryTabs from '../Components/CategoryTabs';
 import MenuCard from '../Components/MenuCard';
 import EmptyMenuState from '../Components/EmptyMenuState';
 import CustomizerDrawer from '../Components/CustomizerDrawer';
+import MemberButton from '../Components/MemberButton';
 import { formatRupiah } from '../Utils/formatRupiah';
 
 export default function Catalog({ appName = 'Kopi Corat-Coret', categories = [], menus = [], orderSession = {} }) {
@@ -118,19 +119,23 @@ export default function Catalog({ appName = 'Kopi Corat-Coret', categories = [],
                     </div>
                 </div>
 
-                {/* Cart Icon CTA (links to RFC-005 Cart) */}
-                <Link
-                    href="/keranjang"
-                    aria-label={`Keranjang belanja, ${cartCount} item`}
-                    className="relative flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border-2 border-[var(--color-ink)] bg-[var(--color-surface-container-low)] text-xl marker-shadow-md hover:bg-[var(--color-surface-container)] active:translate-x-0.5 active:translate-y-0.5"
-                >
-                    ☕
-                    {cartCount > 0 ? (
-                        <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-[var(--color-ink)] bg-[var(--color-promo)] text-[11px] font-extrabold text-[var(--color-surface)] shadow-[1px_1px_0px_var(--color-ink)]">
-                            {cartCount}
-                        </span>
-                    ) : null}
-                </Link>
+                <div className="flex items-center gap-2">
+                    <MemberButton onToast={(msg) => setCartNotice(msg)} />
+
+                    {/* Cart Icon CTA (links to RFC-005 Cart) */}
+                    <Link
+                        href="/keranjang"
+                        aria-label={`Keranjang belanja, ${cartCount} item`}
+                        className="relative flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border-2 border-[var(--color-ink)] bg-[var(--color-surface-container-low)] text-xl marker-shadow-md hover:bg-[var(--color-surface-container)] active:translate-x-0.5 active:translate-y-0.5"
+                    >
+                        ☕
+                        {cartCount > 0 ? (
+                            <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-[var(--color-ink)] bg-[var(--color-promo)] text-[11px] font-extrabold text-[var(--color-surface)] shadow-[1px_1px_0px_var(--color-ink)]">
+                                {cartCount}
+                            </span>
+                        ) : null}
+                    </Link>
+                </div>
             </header>
 
             {/* Cart Feedback Flash Notice */}

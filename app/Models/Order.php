@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends Model
@@ -29,6 +30,7 @@ class Order extends Model
     public const PAYMENT_CASHIER = 'kasir';
 
     protected $fillable = [
+        'user_id',
         'order_code',
         'session_type',
         'table_number',
@@ -51,6 +53,11 @@ class Order extends Model
         'pb1_tax' => 'integer',
         'total' => 'integer',
     ];
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function items(): HasMany
     {

@@ -61,9 +61,20 @@ resources/
 
 ## 4. Acceptance Criteria
 
-- [ ] Pelanggan dapat mendaftarkan akun member dengan Nama, WhatsApp, dan PIN.
-- [ ] Member yang login dapat membuka riwayat struk pesanan terdahulunya.
-- [ ] Animasi konfeti warna-warni menyala saat pesanan berhasil terkonfirmasi.
-- [ ] Seluruh tombol dan kartu mematuhi aturan warna tinta espresso `#4A2C17` dan latar kertas `#FFF9EF`.
-- [ ] Tidak terjadi horizontal overflow pada layar mobile (360px - 430px).
-- [ ] Seluruh skenario alur pesanan dari scan QR / takeaway hingga status selesai teruji lulus secara end-to-end.
+- [x] Pelanggan dapat mendaftarkan akun member dengan Nama, WhatsApp, dan PIN.
+- [x] Member yang login dapat membuka riwayat struk pesanan terdahulunya.
+- [x] Animasi konfeti warna-warni menyala saat pesanan berhasil terkonfirmasi.
+- [x] Seluruh tombol dan kartu mematuhi aturan warna tinta espresso `#4A2C17` dan latar kertas `#FFF9EF`.
+- [x] Tidak terjadi horizontal overflow pada layar mobile (360px - 430px).
+- [x] Seluruh skenario alur pesanan dari scan QR / takeaway hingga status selesai teruji lulus secara end-to-end.
+
+---
+
+## 5. Implementation Notes
+
+- **Autentikasi Akun Member**: Dibuat controller `MemberAuthController` dengan rute `/member/register`, `/member/login`, `/member/logout`, dan `/member/history`. Mendukung registrasi nama, nomor WA Indonesia (`08...`), dan 6-digit PIN yang di-hash dengan bcrypt.
+- **Relasi Database**: Migrasi `2026_10_25_000006_add_member_fields_to_users_and_orders` menambahkan kolom `phone` dan `role` pada tabel `users`, serta foreign key `user_id` pada tabel `orders`.
+- **Komponen Taktil Frontend**: Dibuat `MemberAuthModal.jsx`, `OrderHistoryModal.jsx`, dan `MemberButton.jsx` yang terintegrasi di seluruh header halaman (`Welcome.jsx`, `Catalog.jsx`, `Cart.jsx`, `Tracker.jsx`).
+- **Animasi Konfeti Perayaan**: Utilitas `triggerConfetti.js` menggunakan paket `canvas-confetti` (v1.9.4) dengan palet sketchbook (`#FFC93C`, `#FF7A59`, `#7ED6A5`, `#6EC6FF`, `#4A2C17`) yang meletup saat pesanan berhasil dibuat atau lunas terverifikasi.
+- **Pengujian Mekanis End-to-End**: Pengujian `E2EFullJourneyTest.php` menguji seluruh alur pemesanan secara utuh (Scan QR Meja ➔ Registrasi Member ➔ Checkout Menu + Modifiers + Kupon ➔ Kasir Konfirmasi Lunas di Filament ➔ Pelacakan Pesanan Real-Time ➔ Riwayat Pesanan Member) dengan 100% kelulusan (36 assertions).
+

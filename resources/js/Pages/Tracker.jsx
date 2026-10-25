@@ -4,6 +4,7 @@ import AppLayout from '../Layouts/AppLayout';
 import OrderStatusStepper from '../Components/OrderStatusStepper';
 import MiniDoodleCanvas from '../Components/MiniDoodleCanvas';
 import StatusSimulationControls from '../Components/StatusSimulationControls';
+import MemberButton from '../Components/MemberButton';
 import { formatRupiah } from '../Utils/formatRupiah';
 
 /**
@@ -150,13 +151,17 @@ export default function Tracker({ order }) {
                     </div>
                 </div>
 
-                <Link
-                    href="/katalog"
-                    className="flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--color-ink)] bg-[var(--color-surface)] px-3 text-xs font-extrabold text-[var(--color-ink)] shadow-[2px_2px_0px_var(--color-ink)] hover:bg-[var(--color-surface-container)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
-                >
-                    <span className="material-symbols-outlined text-[18px]">restaurant_menu</span>
-                    <span>Menu</span>
-                </Link>
+                <div className="flex items-center gap-2">
+                    <MemberButton onToast={(msg) => setCallToast(msg)} />
+
+                    <Link
+                        href="/katalog"
+                        className="flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--color-ink)] bg-[var(--color-surface)] px-3 text-xs font-extrabold text-[var(--color-ink)] shadow-[2px_2px_0px_var(--color-ink)] hover:bg-[var(--color-surface-container)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+                    >
+                        <span className="material-symbols-outlined text-[18px]">restaurant_menu</span>
+                        <span>Menu</span>
+                    </Link>
+                </div>
             </div>
 
             <div className="space-y-4 pb-20">

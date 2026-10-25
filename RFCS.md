@@ -30,7 +30,7 @@ Setiap RFC diimplementasikan dengan menjalankan perintah:
 | **RFC-005** | [Keranjang Belanja, Kupon Promo & Nota Struk Kasir Robek](file:///d:/Projects/stud-web/RFCs/RFC-005-Keranjang-Belanja-Struk-Kupon.md) | F12, F13, F14, F15 | RFC-004 | Medium | Implemented |
 | **RFC-006** | [Alur Pembayaran (QRIS Dinamis 15 Menit & Bayar di Kasir)](file:///d:/Projects/stud-web/RFCs/RFC-006-Alur-Pembayaran-QRIS-Kasir.md) | F16, F17, F18, F19 | RFC-005 | Medium | Implemented |
 | **RFC-007** | [Operasional Kasir Filament & Pelacakan Pesanan Real-Time Pelanggan](file:///d:/Projects/stud-web/RFCs/RFC-007-Operasional-Kasir-Filament-Pelacak-Pesanan.md) | F20, F21, F22, F32 | RFC-002, RFC-006 | High | Implemented |
-| **RFC-008** | [Autentikasi Akun Member, Polish UI & Pengujian E2E](file:///d:/Projects/stud-web/RFCs/RFC-008-Auth-Member-Polish-UI-Testing-E2E.md) | F24 | RFC-007 | Medium | Not started |
+| **RFC-008** | [Autentikasi Akun Member, Polish UI & Pengujian E2E](file:///d:/Projects/stud-web/RFCs/RFC-008-Auth-Member-Polish-UI-Testing-E2E.md) | F24 | RFC-007 | Medium | Implemented |
 
 ---
 

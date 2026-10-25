@@ -5,6 +5,7 @@ import TableBadge from '../Components/TableBadge';
 import PromoBanner from '../Components/PromoBanner';
 import WifiMemoCard from '../Components/WifiMemoCard';
 import TakeawayFormModal from '../Components/TakeawayFormModal';
+import MemberButton from '../Components/MemberButton';
 
 /**
  * Welcome / order-session entry point (RFC-003, F1-F4, F23, F26).
@@ -22,8 +23,11 @@ export default function Welcome({ appName, mode, tableNumber, orderSession }) {
 
     return (
         <AppLayout>
-            {/* Washi tape strip at the top of the page (UI-5) */}
-            <div aria-hidden="true" className="mx-auto mb-6 h-6 w-40 -rotate-2 rounded-sm bg-[var(--color-primary)] opacity-80" />
+            {/* Top Bar with washi tape strip and Member Button (RFC-008) */}
+            <div className="mb-4 flex items-center justify-between">
+                <div aria-hidden="true" className="h-6 w-32 -rotate-2 rounded-sm bg-[var(--color-primary)] opacity-80" />
+                <MemberButton />
+            </div>
 
             {isDineIn && <TableBadge tableNumber={tableNumber} />}
 
