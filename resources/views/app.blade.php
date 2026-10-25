@@ -20,6 +20,16 @@
 
         @vite(['resources/css/app.css', 'resources/js/app.jsx'])
         @inertiaHead
+
+        @php
+            $snapUrl = config('services.midtrans.is_production')
+                ? 'https://app.midtrans.com/snap/snap.js'
+                : 'https://app.sandbox.midtrans.com/snap/snap.js';
+        @endphp
+        <script
+            src="{{ $snapUrl }}"
+            data-client-key="{{ config('services.midtrans.client_key') }}"
+        ></script>
     </head>
     <body>
         @inertia

@@ -38,7 +38,11 @@ class Order extends Model
         'customer_phone',
         'pickup_time',
         'payment_method',
+        'snap_token',
+        'payment_gateway_status',
+        'payment_type',
         'status',
+        'paid_at',
         'subtotal',
         'discount',
         'coupon_code',
@@ -52,6 +56,7 @@ class Order extends Model
         'discount' => 'integer',
         'pb1_tax' => 'integer',
         'total' => 'integer',
+        'paid_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

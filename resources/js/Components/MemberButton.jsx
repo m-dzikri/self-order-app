@@ -8,7 +8,7 @@ import OrderHistoryModal from './OrderHistoryModal';
  * Tapping opens OrderHistoryModal if member is authenticated, or MemberAuthModal if guest.
  * (RFC-008, F24, UI-4).
  */
-export default function MemberButton({ onToast }) {
+export default function MemberButton({ onToast, onLoginSuccess }) {
     const { auth } = usePage().props;
     const [currentUser, setCurrentUser] = useState(auth?.user || null);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -22,9 +22,12 @@ export default function MemberButton({ onToast }) {
         }
     };
 
-    const handleAuthSuccess = (user, message) => {
+    const handleAuthSuccess = (user, message, activeOrderId) => {
         setCurrentUser(user);
         if (onToast) onToast(message || 'Login member berhasil!');
+        if (onLoginSuccess) {
+            onLoginSuccess(user, activeOrderId);
+        }
     };
 
     const handleLogout = () => {

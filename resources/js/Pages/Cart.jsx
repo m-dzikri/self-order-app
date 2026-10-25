@@ -10,6 +10,8 @@ import CustomizerDrawer from '../Components/CustomizerDrawer';
 import PaymentMethodSelector from '../Components/PaymentMethodSelector';
 import QRISModal from '../Components/QRISModal';
 import CashierInstructionModal from '../Components/CashierInstructionModal';
+import SwitchModeModal from '../Components/SwitchModeModal';
+import QRScannerModal from '../Components/QRScannerModal';
 import MemberButton from '../Components/MemberButton';
 import { formatRupiah } from '../Utils/formatRupiah';
 import { calculateCartTotals } from '../Utils/calculateCartTotals';
@@ -58,6 +60,10 @@ export default function Cart({
 
     // 6. User feedback banner
     const [feedbackToast, setFeedbackToast] = useState(null);
+
+    // 7. Switch Mode Confirmation Modal
+    const [isSwitchModalOpen, setIsSwitchModalOpen] = useState(false);
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
 
     // Persist cart items to localStorage
     const persistCart = (newItems) => {
@@ -173,14 +179,18 @@ export default function Cart({
         setIsSubmitting(true);
         setFeedbackToast(null);
 
+        const isDineInOrder = (orderSession?.type === 'dine_in' || orderSession?.mode === 'dine_in') && Boolean(orderSession?.table_number);
+        const sessionType = isDineInOrder ? 'dine_in' : 'takeaway';
+        const tableNumber = isDineInOrder ? String(orderSession.table_number) : null;
+
         const payload = {
             payment_method: selectedPayment,
             coupon_code: appliedCoupon,
-            session_type: orderSession?.type || (orderSession?.table_number ? 'dine_in' : 'takeaway'),
-            table_number: orderSession?.table_number || null,
+            session_type: sessionType,
+            table_number: tableNumber,
             customer_name: orderSession?.customer_name || orderSession?.name || null,
             customer_phone: orderSession?.customer_phone || orderSession?.phone || null,
-            pickup_time: orderSession?.pickup_time || orderSession?.pickupAt || null,
+            pickup_time: isDineInOrder ? null : (orderSession?.pickup_time || orderSession?.pickupAt || null),
             items: cartItems.map((i) => ({
                 menuId: i.menuId,
                 quantity: i.quantity,
@@ -245,7 +255,7 @@ export default function Cart({
         );
     }, [editingItem, menus]);
 
-    const isDineIn = orderSession.type === 'dine_in' && orderSession.table_number;
+    const isDineIn = (orderSession?.type === 'dine_in' || orderSession?.mode === 'dine_in') && Boolean(orderSession?.table_number);
 
     return (
         <AppLayout>
@@ -267,13 +277,25 @@ export default function Cart({
                                 {appName}
                             </span>
                             {isDineIn ? (
-                                <span className="rounded-sm border border-[var(--color-ink)] bg-[var(--color-primary)] px-1.5 py-0.2 text-[11px] font-extrabold text-[var(--color-ink)] -rotate-1 shadow-[1px_1px_0px_var(--color-ink)]">
-                                    Meja {orderSession.table_number}
-                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsSwitchModalOpen(true)}
+                                    title="Klik untuk beralih ke Takeaway"
+                                    className="group flex items-center gap-1 rounded-sm border border-[var(--color-ink)] bg-[var(--color-primary)] px-1.5 py-0.2 text-[11px] font-extrabold text-[var(--color-ink)] -rotate-1 shadow-[1px_1px_0px_var(--color-ink)] hover:bg-[var(--color-primary-dim)] cursor-pointer transition-all"
+                                >
+                                    <span>Meja {orderSession.table_number}</span>
+                                    <span className="material-symbols-outlined text-[13px] opacity-60 group-hover:opacity-100">swap_horiz</span>
+                                </button>
                             ) : (
-                                <span className="rounded-sm border border-[var(--color-ink)] bg-[var(--color-surface-container-high)] px-1.5 py-0.2 text-[11px] font-bold text-[var(--color-ink)] rotate-1 shadow-[1px_1px_0px_var(--color-ink)]">
-                                    Takeaway
-                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsScannerOpen(true)}
+                                    title="Klik untuk pindai QR Meja & beralih ke Makan di Tempat (Dine-In)"
+                                    className="group flex items-center gap-1 rounded-sm border border-[var(--color-ink)] bg-[var(--color-surface-container-high)] px-1.5 py-0.2 text-[11px] font-bold text-[var(--color-ink)] rotate-1 shadow-[1px_1px_0px_var(--color-ink)] hover:bg-[var(--color-primary)] cursor-pointer transition-all"
+                                >
+                                    <span>Takeaway</span>
+                                    <span className="material-symbols-outlined text-[13px] opacity-70 group-hover:opacity-100">qr_code_scanner</span>
+                                </button>
                             )}
                         </div>
                         <h1 className="text-xl font-extrabold text-[var(--color-ink)]">
@@ -484,6 +506,33 @@ export default function Cart({
                     } else if (target?.order_code) {
                         router.visit(`/order/track/${encodeURIComponent(target.order_code)}`);
                     }
+                }}
+            />
+
+            {/* Switch Mode Confirmation Modal */}
+            <SwitchModeModal
+                isOpen={isSwitchModalOpen}
+                onClose={() => setIsSwitchModalOpen(false)}
+                currentTableNumber={orderSession?.table_number}
+                onOpenScanner={() => setIsScannerOpen(true)}
+            />
+
+            {/* In-App Camera QR Scanner Modal */}
+            <QRScannerModal
+                isOpen={isScannerOpen}
+                onClose={() => setIsScannerOpen(false)}
+                onDetectedTable={(tableNum) => {
+                    setIsScannerOpen(false);
+                    router.post(
+                        '/session/switch-mode',
+                        { mode: 'dine_in', table_number: tableNum },
+                        {
+                            preserveScroll: true,
+                            onSuccess: () => {
+                                setFeedbackToast(`Sesi keranjang dialihkan ke Meja ${tableNum}!`);
+                            },
+                        }
+                    );
                 }}
             />
         </AppLayout>

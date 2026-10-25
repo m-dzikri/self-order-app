@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Menu;
 use App\Models\Order;
+use App\Services\MidtransService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +16,12 @@ class OrderController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        if ($request->input('session_type') === 'takeaway') {
+            $request->merge(['table_number' => null]);
+        } elseif ($request->filled('table_number')) {
+            $request->merge(['table_number' => (string) $request->input('table_number')]);
+        }
+
         $validated = $request->validate([
             'payment_method' => 'required|string|in:qris,ewallet,kasir',
             'items' => 'required|array|min:1',
@@ -33,17 +40,22 @@ class OrderController extends Controller
             'customer_name' => 'nullable|string|max:100',
             'customer_phone' => 'nullable|string|max:20',
             'pickup_time' => 'nullable|string|max:20',
-            'table_number' => 'nullable|string|max:10',
+            'table_number' => 'nullable|max:10',
             'session_type' => 'nullable|string|in:dine_in,takeaway',
         ]);
 
         $session = $request->session()->get('order_session', []);
 
-        $sessionType = $validated['session_type'] ?? ($session['type'] ?? 'takeaway');
-        $tableNumber = $validated['table_number'] ?? ($session['table_number'] ?? null);
+        $sessionType = $validated['session_type'] ?? ($session['type'] ?? $session['mode'] ?? 'takeaway');
+        $tableNumber = $sessionType === 'dine_in'
+            ? ($validated['table_number'] ?? ($session['table_number'] ?? null))
+            : null;
+        if ($tableNumber !== null) {
+            $tableNumber = (string) $tableNumber;
+        }
         $user = $request->user();
-        $customerName = $validated['customer_name'] ?? ($session['customer_name'] ?? $session['name'] ?? $user?->name);
-        $customerPhone = $validated['customer_phone'] ?? ($session['phone'] ?? $user?->phone);
+        $customerName = $validated['customer_name'] ?? ($user?->name ?? $session['customer_name'] ?? $session['name'] ?? null);
+        $customerPhone = $validated['customer_phone'] ?? ($user?->phone ?? $session['customer_phone'] ?? $session['phone'] ?? null);
         $pickupTime = $validated['pickup_time'] ?? ($session['pickup_time'] ?? $session['pickupAt'] ?? null);
 
         // Strip HTML tags for security (SEC-1)
@@ -173,6 +185,11 @@ class OrderController extends Controller
                 $order->items()->create($item);
             }
 
+            // Generate Snap Token via Midtrans for online payment (QRIS / E-Wallet)
+            if (in_array($paymentMethod, [Order::PAYMENT_QRIS, Order::PAYMENT_EWALLET], true)) {
+                app(MidtransService::class)->createSnapToken($order);
+            }
+
             // Save active order to customer session for tracker isolation (SEC-3, RFC-007)
             $activeOrders = $request->session()->get('active_order_ids', []);
             $activeOrders[] = $order->id;
@@ -187,6 +204,7 @@ class OrderController extends Controller
                     'order_code' => $order->order_code,
                     'status' => $order->status,
                     'payment_method' => $order->payment_method,
+                    'snap_token' => $order->snap_token,
                     'subtotal' => $order->subtotal,
                     'discount' => $order->discount,
                     'pb1_tax' => $order->pb1_tax,

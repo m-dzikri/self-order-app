@@ -3,13 +3,17 @@
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\MemberAuthController;
+use App\Http\Controllers\MidtransWebhookController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrderSessionController;
 use App\Http\Controllers\OrderTrackerController;
+use App\Http\Controllers\TableQrController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', OrderSessionController::class)->name('welcome');
+Route::get('/meja-qr', [TableQrController::class, 'index'])->name('tables.qr');
 Route::post('/session/takeaway', [OrderSessionController::class, 'storeTakeaway'])->name('session.takeaway');
+Route::post('/session/switch-mode', [OrderSessionController::class, 'switchMode'])->name('session.switch-mode');
 Route::get('/katalog', CatalogController::class)->name('catalog');
 Route::get('/keranjang', CartController::class)->name('cart');
 Route::post('/order/checkout', [OrderController::class, 'store'])->name('order.checkout');
@@ -25,3 +29,6 @@ Route::post('/member/register', [MemberAuthController::class, 'register'])->name
 Route::post('/member/login', [MemberAuthController::class, 'login'])->name('member.login');
 Route::post('/member/logout', [MemberAuthController::class, 'logout'])->name('member.logout');
 Route::get('/member/history', [MemberAuthController::class, 'history'])->name('member.history');
+
+// Midtrans Payment Gateway Webhook (Server-to-Server)
+Route::post('/api/webhooks/midtrans', [MidtransWebhookController::class, 'handle'])->name('webhooks.midtrans');

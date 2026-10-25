@@ -196,4 +196,48 @@ class OrderCheckoutTest extends TestCase
         $response->assertUnprocessable();
         $response->assertJsonValidationErrors(['payment_method', 'items']);
     }
+
+    public function test_takeaway_checkout_tolerates_integer_or_leftover_table_number(): void
+    {
+        $response = $this->postJson('/order/checkout', [
+            'payment_method' => 'kasir',
+            'session_type' => 'takeaway',
+            'table_number' => 5, // Integer dari sesi sebelumnya
+            'customer_name' => 'Budi Santoso',
+            'customer_phone' => '081234567890',
+            'items' => [
+                [
+                    'menuId' => $this->menu->id,
+                    'quantity' => 1,
+                ],
+            ],
+        ]);
+
+        $response->assertCreated();
+        $this->assertDatabaseHas('orders', [
+            'session_type' => 'takeaway',
+            'table_number' => null, // Harus null karena mode takeaway
+        ]);
+    }
+
+    public function test_dine_in_checkout_casts_integer_table_number_to_string(): void
+    {
+        $response = $this->postJson('/order/checkout', [
+            'payment_method' => 'kasir',
+            'session_type' => 'dine_in',
+            'table_number' => 12, // Dikirim integer oleh browser
+            'items' => [
+                [
+                    'menuId' => $this->menu->id,
+                    'quantity' => 1,
+                ],
+            ],
+        ]);
+
+        $response->assertCreated();
+        $this->assertDatabaseHas('orders', [
+            'session_type' => 'dine_in',
+            'table_number' => '12',
+        ]);
+    }
 }

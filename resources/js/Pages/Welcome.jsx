@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 import TableBadge from '../Components/TableBadge';
 import PromoBanner from '../Components/PromoBanner';
 import WifiMemoCard from '../Components/WifiMemoCard';
 import TakeawayFormModal from '../Components/TakeawayFormModal';
 import MemberButton from '../Components/MemberButton';
+import QRScannerModal from '../Components/QRScannerModal';
 
 /**
  * Welcome / order-session entry point (RFC-003, F1-F4, F23, F26).
@@ -17,6 +18,7 @@ export default function Welcome({ appName, mode, tableNumber, orderSession }) {
     const sessionComplete = Boolean(orderSession?.name && orderSession?.phone);
     const [formOpen, setFormOpen] = useState(false);
     const [formDismissed, setFormDismissed] = useState(false);
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
 
     // Takeaway without stored session data → the form greets the visitor.
     const autoOpen = !isDineIn && !sessionComplete && !formDismissed;
@@ -29,7 +31,18 @@ export default function Welcome({ appName, mode, tableNumber, orderSession }) {
                 <MemberButton />
             </div>
 
-            {isDineIn && <TableBadge tableNumber={tableNumber} />}
+            {isDineIn && (
+                <div className="mb-2 flex flex-col items-center">
+                    <TableBadge tableNumber={tableNumber} />
+                    <button
+                        type="button"
+                        onClick={() => router.post('/session/switch-mode', { mode: 'takeaway' })}
+                        className="mb-2 -mt-1 text-xs font-bold text-[var(--color-ink-soft)] hover:text-[var(--color-promo)] underline transition-colors"
+                    >
+                        Bukan di Meja {tableNumber}? Ganti ke Bawa Pulang (Takeaway) 🛍️
+                    </button>
+                </div>
+            )}
 
             {/* Mascot "Si Corat" polaroid frame (RFC-003 §3; inline SVG doodle) */}
             <div className="mx-auto mb-5 w-fit rotate-[1deg] rounded-xl border-2 border-[var(--color-ink)] bg-[var(--color-surface-container-lowest)] p-3 shadow-[var(--shadow-tactile-lg)]">
@@ -107,7 +120,7 @@ export default function Welcome({ appName, mode, tableNumber, orderSession }) {
                 <WifiMemoCard />
             </div>
 
-            <div className="mt-6 mb-4 flex flex-col items-center">
+            <div className="mt-6 mb-3 flex flex-col items-center gap-2.5">
                 <Link
                     className="btn-tactile flex w-full items-center justify-center gap-3 rounded-xl border-2 border-[var(--color-ink)] bg-[var(--color-primary)] px-6 py-4 text-[18px] font-extrabold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ink)]"
                     href="/katalog"
@@ -118,6 +131,17 @@ export default function Welcome({ appName, mode, tableNumber, orderSession }) {
                     Mulai Pesan Sekarang
                     <span aria-hidden="true" className="material-symbols-outlined">arrow_forward</span>
                 </Link>
+
+                {!isDineIn && (
+                    <button
+                        type="button"
+                        onClick={() => setIsScannerOpen(true)}
+                        className="btn-tactile flex w-full items-center justify-center gap-2 rounded-xl border-2 border-[var(--color-ink)] bg-[var(--color-surface-container)] px-4 py-3 text-[14px] font-black text-[var(--color-ink)] marker-shadow hover:bg-[var(--color-surface-container-high)] active:translate-y-0.5 cursor-pointer"
+                    >
+                        <span className="material-symbols-outlined text-[20px]">qr_code_scanner</span>
+                        <span>Duduk di Meja? Pindai QR Meja 📷</span>
+                    </button>
+                )}
             </div>
 
             {/* ARCH-4: the dine-in session is locked, so the takeaway form is
@@ -148,6 +172,35 @@ export default function Welcome({ appName, mode, tableNumber, orderSession }) {
                 }}
                 open={formOpen || autoOpen}
             />
+
+            {/* In-App Camera QR Scanner Modal */}
+            <QRScannerModal
+                isOpen={isScannerOpen}
+                onClose={() => setIsScannerOpen(false)}
+                onDetectedTable={(scannedTable) => {
+                    setIsScannerOpen(false);
+                    router.post(
+                        '/session/switch-mode',
+                        { mode: 'dine_in', table_number: scannedTable },
+                        {
+                            onSuccess: () => {
+                                router.visit('/katalog');
+                            },
+                        }
+                    );
+                }}
+            />
+
+            {/* Link to Cafe Standee Cards Page */}
+            <div className="mt-6 mb-2 text-center">
+                <Link
+                    href="/meja-qr"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] underline"
+                >
+                    <span className="material-symbols-outlined text-[15px]">table_restaurant</span>
+                    <span>Lihat &amp; Cetak Standee QR Meja Kafe 🖨️</span>
+                </Link>
+            </div>
         </AppLayout>
     );
 }

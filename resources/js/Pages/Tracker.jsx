@@ -118,12 +118,14 @@ export default function Tracker({ order }) {
 
             {/* Floating Toast Notification */}
             {callToast && (
-                <div className="fixed top-4 left-4 right-4 z-50 mx-auto max-w-[420px] animate-bounce">
-                    <div className="flex items-center gap-2 rounded-xl border-2 border-[var(--color-ink)] bg-[var(--color-primary-container)] px-4 py-3 marker-shadow-lg text-xs font-extrabold text-[var(--color-ink)]">
-                        <span className="material-symbols-outlined text-[20px] text-[var(--color-promo)]">
-                            notifications_active
-                        </span>
-                        <span>{callToast}</span>
+                <div className="fixed top-5 left-4 right-4 z-[999] mx-auto max-w-[420px] animate-bounce">
+                    <div className="flex items-center gap-3 rounded-2xl border-2 border-[var(--color-ink)] bg-[#ffc93c] px-4 py-3 shadow-[4px_4px_0px_var(--color-ink)] text-xs font-black text-[var(--color-ink)]">
+                        <div className="flex h-8 w-8 min-w-[32px] items-center justify-center rounded-xl border border-[var(--color-ink)] bg-[var(--color-surface)] shadow-[1.5px_1.5px_0px_var(--color-ink)]">
+                            <span className="material-symbols-outlined text-[20px] text-[var(--color-promo)] animate-pulse">
+                                notifications_active
+                            </span>
+                        </div>
+                        <span className="leading-snug flex-1">{callToast}</span>
                     </div>
                 </div>
             )}
@@ -152,7 +154,18 @@ export default function Tracker({ order }) {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <MemberButton onToast={(msg) => setCallToast(msg)} />
+                    <MemberButton
+                        onToast={(msg) => setCallToast(msg)}
+                        onLoginSuccess={(user, activeOrderId) => {
+                            if (order.user_id !== user.id) {
+                                if (activeOrderId) {
+                                    window.location.href = `/order/track/${activeOrderId}`;
+                                } else {
+                                    window.location.href = '/katalog';
+                                }
+                            }
+                        }}
+                    />
 
                     <Link
                         href="/katalog"

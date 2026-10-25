@@ -45,7 +45,7 @@ export default function MemberAuthModal({ isOpen, onClose, onSuccess }) {
                     triggerConfetti();
                     resetForm();
                     if (onSuccess) {
-                        onSuccess(res.data.user, res.data.message);
+                        onSuccess(res.data.user, res.data.message, res.data.active_order_id);
                     }
                     onClose();
                 }
@@ -58,7 +58,7 @@ export default function MemberAuthModal({ isOpen, onClose, onSuccess }) {
                 if (res.data?.success) {
                     resetForm();
                     if (onSuccess) {
-                        onSuccess(res.data.user, res.data.message);
+                        onSuccess(res.data.user, res.data.message, res.data.active_order_id);
                     }
                     onClose();
                 }
