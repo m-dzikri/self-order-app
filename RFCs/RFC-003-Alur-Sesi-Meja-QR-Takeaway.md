@@ -106,7 +106,7 @@ Implementasi selesai (2026-10-24). Catatan deviasi dari isi RFC:
 
 - `php artisan test` → **38 test passed (239 assertions)**, mencakup `WelcomeSessionTest` (TC-003-1, AC-1/2/5/6 — AC-5 dan wiring AC-2/4/6 diverifikasi terhadap bundel terbangun karena stack tidak punya DOM test tooling) dan `TakeawaySessionTest` (TC-003-2/3, AC-2/3/7 + ARCH-4).
 - `npm test` → **18 test pass** (`validateTakeaway.test.js` TC-003-3 klien, `copyToClipboard.test.js` TC-003-4, `formatRupiah.test.js`).
-- `npm run build` → sukses (Welcome 14.5 kB, Catalog 1.3 kB; stylesheet 16.1 kB, nol `#000000`).
+- `npm run build` → sukses (Welcome 14.5 kB, Catalog 1.3 kB; stylesheet 15,7 kB — Round 3, nol `#000000`).
 - `vendor/bin/pint --test` → **passed** (seluruh repo).
 
 ---
@@ -136,3 +136,10 @@ Perbaikan atas satu blocking issue Round 2 di `reviews/REVIEW-RFC-003.md`:
 3. **Region "Tersalin!" difungsikan** (saran non-blocking Round 2): sebelumnya region `aria-live` berisi teks statis + toggle `opacity` — struktural benar tetapi tidak pernah mengumumkan apa pun ke pembaca layar dan meninggalkan "Tersalin!" phantom di accessibility tree. Kini region selalu ter-mount namun **kosong** sampai copy berhasil (`{copied ? 'Tersalin! ✨' : ''}`), sehingga perubahan konten benar-benar ter-announce dan teks tidak muncul sebelum waktunya.
 
 Verifikasi Round 2: `php artisan test` **38/38 lulus (239 assertions)**, `npm test` 18/18, `npm run build` sukses (nol `#000000`), `vendor/bin/pint --test` **passed**.
+
+### Round 3 Review Outcome (2026-10-25)
+
+Round 3 (konteks segar) menutup **tanpa blocking baru** — semua 5 dimensi PASS, Risk LOW. Dua temuan non-blocking dari Round 3 langsung dibereskan:
+
+1. **Animasi stempel dipulihkan**: penggantian teks kondisional di Round 2 menghapus `transition-opacity`, sehingga stempel "Tersalin!" muncul mendadak padahal RFC §3 menyebut "animasi stempel". Kombinasi `transition-opacity duration-200` + isi teks kondisional dipertahankan — transisi visual kembali ada **tanpa** mengorbankan pola live-region (region tetap ter-mount, teks tetap kosong sebelum copy).
+2. **Angka bukti basi dikoreksi**: ukuran stylesheet dalam bukti verifikasi diperbarui (16,1 → 15,7 kB, hasil build Round 3).

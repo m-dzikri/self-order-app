@@ -637,3 +637,324 @@ The fixes genuinely hold. The bundle tests read the real manifest-resolved Welco
 5. Modal: consider a second offset sheet behind the notepad for the literal "stacked" look of DESIGN.md:181; use the spec's mint washi variant for the second strip.
 6. Escape-to-close currently discards in-progress input (reset on reopen) — either confirm intent or keep the draft until explicit dismissal.
 7. Keep the recorded items visible in RFC-008: full focus trap/restore, Dusk coverage for AC-2/4 wiring, and collapsing the duplicate `RootPageTest`/`WelcomePageTest`.
+
+---
+
+## Round 3 — 2026-10-25
+
+**Reviewer:** independent code reviewer (fresh context, no memory of implementation)
+**Scope:** Confirmatory re-review of RFC-003 after fix commit `dfa9f47` ("RFC-003 Round 2 review fixes - catalog contrast, accurate RFC figures, functional aria-live stamp"). Verdict on (a) Round 2's single blocking issue (`Catalog.jsx` contrast + two inaccurate RFC figures), (b) the non-blocking "Tersalin!" aria-live finding, (c) whether anything regressed anywhere else in the RFC.
+**Method:** read of Rounds 1 and 2 of this file; full read of RFC-003 (Implementation Notes, `## Round 1 Review Fixes (2026-10-24)` 7 items, `### Round 2 Review Fixes (2026-10-25)` 3 items — every claim verified against code); RFCS.md status table; RULES.md; TEST-STRATEGY.md TC-003-1..4; full read of `Catalog.jsx`, `WifiMemoCard.jsx`, `Welcome.jsx`, `OrderSessionController.php`, `StoreTakeawayRequest.php`, `WelcomeSessionTest.php`, `TakeawaySessionTest.php`, `tokens.css`; live execution of the test suite, JS tests, production build, built-artifact inspection (built CSS + Welcome chunk + Catalog chunk + manifest), Pint; **independent WCAG relative-luminance recomputation** of 10 text/background pairs from the literal `tokens.css` values; `git log` / `git show dfa9f47` diff review of every changed file. Git state verified clean (`git status --porcelain` and `git diff --stat HEAD` both empty; HEAD = `dfa9f47`), so the tree is exactly the Round 2 fix commit.
+
+---
+
+## STEP 0 — Command output (ACTUAL)
+
+### 1. `php artisan test`
+
+```
+   PASS  Tests\Unit\BadgeEnumTest
+  ✓ badge labels match rfc specification                                                                         0.01s
+  ✓ badge values are stable for database storage
+
+   PASS  Tests\Feature\Filament\CategoryCrudTest
+  ✓ admin panel requires authentication                                                                          0.65s
+  ✓ admin can create category                                                                                    0.55s
+  ✓ category form rejects empty name                                                                             0.29s
+  ✓ admin can update category sort order                                                                         0.31s
+  ✓ category seeder populates all categories                                                                     0.32s
+
+   PASS  Tests\Feature\Filament\MenuCrudTest
+  ✓ admin can create menu with modifiers                                                                         0.58s
+  ✓ menu form rejects negative price                                                                             1.25s
+  ✓ menu form rejects empty name                                                                                 1.59s
+  ✓ menu list renders with badge menu                                                                            0.73s
+  ✓ edit menu form hydrates badge state                                                                          0.14s
+  ✓ menu seeder populates full catalog                                                                           0.73s
+
+   PASS  Tests\Feature\Filament\MenuStockToggleTest
+  ✓ stock toggle persists to database                                                                            0.94s
+  ✓ stock toggle can be restored                                                                                 0.92s
+
+   PASS  Tests\Feature\RootPageTest
+  ✓ root page renders inertia app                                                                                0.19s
+
+   PASS  Tests\Feature\TakeawaySessionTest
+  ✓ valid takeaway submission stores session                                                                     0.09s
+  ✓ short name is rejected                                                                                       0.12s
+  ✓ invalid whatsapp numbers are rejected                                                                        0.14s
+  ✓ pickup within ten minutes is rejected                                                                        0.12s
+  ✓ missing fields are rejected                                                                                  0.14s
+  ✓ html in name is stripped before storing                                                                      0.12s
+  ✓ takeaway submission does not overwrite dine in session                                                       0.12s
+  ✓ stored session is exposed back to welcome page                                                               0.13s
+
+   PASS  Tests\Feature\TokenCssVisualTest
+  ✓ root page loads epilogue and nunito sans fonts                                                               0.14s
+  ✓ built stylesheet contains design tokens                                                                      0.11s
+
+   PASS  Tests\Feature\WelcomePageTest
+  ✓ root route renders inertia welcome page                                                                      0.12s
+  ✓ root route returns app blade shell                                                                           0.12s
+
+   PASS  Tests\Feature\WelcomeSessionTest
+  ✓ table qr locks dine in mode with table number                                                                0.12s
+  ✓ missing table param starts takeaway mode                                                                     0.12s
+  ✓ non numeric table param is ignored                                                                           0.13s
+  ✓ zero table param is ignored                                                                                  0.13s
+  ✓ takeaway session converts to dine in keeping customer data                                                   0.14s
+  ✓ overlong table param is ignored                                                                              0.15s
+  ✓ stored session persists across requests                                                                      0.13s
+  ✓ catalog placeholder route renders                                                                            0.12s
+  ✓ welcome bundle renders promo voucher                                                                          0.10s
+  ✓ welcome bundle wires takeaway form and catalog cta                                                           0.10s
+
+  Tests:    38 passed (239 assertions)
+  Duration: 11.67s
+```
+
+**RESULT: 38 tests / 239 assertions PASSED** — identical to the RFC's Round 1 and Round 2 verification claims. Both bundle tests **ran (not skipped)**, i.e. they read a real built artifact in this environment.
+
+### 2. `npm test`
+
+```
+> test
+> node --test "tests/JS/**/*.test.js"
+
+▶ copyToClipboard
+  ✔ copies the text and resolves true on success (3.2309ms)
+  ✔ resolves false when the clipboard API rejects (e.g. permission) (0.2246ms)
+  ✔ resolves false when the clipboard API is unavailable (1.8223ms)
+✔ copyToClipboard (6.3899ms)
+▶ formatRupiah
+  ✔ formats 28000 as "Rp 28.000" (51.2202ms)
+  ✔ formats 0 as "Rp 0" (0.2664ms)
+  ✔ coerces numeric strings (CODE-2) (0.2732ms)
+  ✔ formats large amounts with thousand separators (0.3765ms)
+  ✔ falls back to "Rp 0" for invalid input (0.2104ms)
+✔ formatRupiah (54.7813ms)
+▶ validateTakeaway
+  ▶ validateName
+    ✔ accepts names with 3 or more characters (0.6179ms)
+    ✔ rejects empty and too-short names (0.1644ms)
+  ✔ validateName (1.5549ms)
+  ▶ validatePhone
+    ✔ accepts Indonesian 08 numbers of 10-13 digits (0.2437ms)
+    ✔ rejects numbers that do not match the SEC-2 pattern (0.0549ms)
+  ✔ validatePhone (0.7491ms)
+  ▶ validatePickupAt
+    ✔ accepts times at least 10 minutes ahead (0.3411ms)
+    ✔ rejects times within the closure window (0.1572ms)
+    ✔ rolls past-midnight times over to the next day (0.1086ms)
+    ✔ rejects malformed time strings (0.1127ms)
+  ✔ validatePickupAt (0.7934ms)
+  ▶ aggregate
+    ✔ accepts a fully valid payload (0.4894ms)
+    ✔ collects every field error at once (0.1366ms)
+  ✔ aggregate (0.9394ms)
+✔ validateTakeaway (6.2986ms)
+ℹ tests 18
+ℹ suites 7
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 159.6703
+```
+
+**RESULT: 18 tests PASSED, 0 failed** — matches the RFC claim.
+
+### 3. `npm run build`
+
+```
+> build
+> vite build
+
+vite v8.3.5 building client environment for production...
+transforming...
+✓ 632 modules transformed.
+rendering chunks...
+computing gzip size...
+public/build/manifest.json                   1.18 kB │ gzip:   0.33 kB
+public/build/assets/app-DLh2unG8.css        15.71 kB │ gzip:   3.95 kB
+public/build/assets/AppLayout-I5tgk1-I.js    0.18 kB │ gzip:   0.16 kB
+public/build/assets/Catalog-C44TUVhG.js      1.30 kB │ gzip:   0.62 kB
+public/build/assets/Welcome-q8tQzSqg.js     14.47 kB │ gzip:   4.12 kB
+public/build/assets/app-Bm7R125N.js        347.40 kB │ gzip: 108.68 kB
+
+✓ built in 465ms
+```
+
+**RESULT: build SUCCESS.** Sizes: Welcome 14.47 kB (was 14.51), Catalog 1.30 kB, stylesheet **15.71 kB** (was 16.12 at Round 2 — the fix removed `transition-opacity`/`opacity-0`/`opacity-100` utilities, and Tailwind v4's `@property` machinery for transitions went with them; see Improvement #2 about the now-stale evidence figure).
+
+### 3b. Built-artifact inspection (`public/build/assets/app-DLh2unG8.css`, `Welcome-q8tQzSqg.js`, `Catalog-C44TUVhG.js`)
+
+```
+(?i)#000000 in app-DLh2unG8.css                => 0   (UI-2 PASS)
+.text-\[var\(--color-ink-soft\)\]               => 1   (NEW utility compiled: {color:var(--color-ink-soft)})
+.text-\[var\(--color-outline\)\]                => 0   (OLD text utility GONE from shipped CSS)
+var(--color-outline) occurrences                => 1 context only: .border-\[var\(--color-outline\)\]{border-color:...}  (border, not text)
+min-h-\[44px\]{min-height:44px}                 => 1   (touch-target fix still compiled)
+transition-opacity / opacity-0 / opacity-100    => 0 0 0  (see New Finding #1 — stamp fade removed)
+
+Welcome chunk (manifest key resources/js/Pages/Welcome.jsx):
+  SKETCHKOPI => 1 | Diskon 10% => 1 | /session/takeaway => 1 | /katalog => 1
+  ngopiyuk123 => 1 | Tersalin => 1 | min-h-[44px] => 2
+Catalog chunk:
+  text-[var(--color-ink-soft)] => 1 | text-[var(--color-outline)] => 0
+```
+
+All AC-5/AC-6 wiring strings are still in the real Welcome entry chunk; the old outline text class is gone from **both** the source and the shipped CSS.
+
+### 4. `vendor\bin\pint --test` (whole repo, no directory limits)
+
+```
+{"tool":"pint","result":"passed"}
+```
+
+**RESULT: PASSED.** (CODE-1.)
+
+---
+
+## STEP 1 — Round 2's remaining items: verification
+
+### Blocking — `Catalog.jsx` label contrast — **GENUINELY FIXED**
+
+- **Actual class in the file:** `resources/js/Pages/Catalog.jsx:13` → `text-sm font-bold uppercase tracking-wide text-[var(--color-ink-soft)]`. The `text-[var(--color-outline)]` class no longer appears anywhere in the file (diff `dfa9f47` is exactly this one-line swap).
+- **Shipped CSS:** `.text-\[var\(--color-ink-soft)\]` compiled (1 hit, with declaration); `.text-\[var\(--color-outline)\]` **absent** (0 hits). The only remaining `var(--color-outline)` in the bundle is the *border* utility (`.border-\[var\(--color-outline)\]`, `Welcome.jsx:89` dashed card border — non-text, WCAG 1.4.11 not engaged).
+- **Shipped Catalog chunk:** contains `text-[var(--color-ink-soft)]` (1) and no `text-[var(--color-outline)]` (0) — i.e. the fix is in the artifact, not just the source.
+- **Independent recomputation** (WCAG relative luminance, literal `tokens.css` values):
+
+```
+Catalog.jsx:13 ink-soft #4F4634 on paper #FFF9EF => 8.88:1 (need 4.5) PASS
+OLD Catalog.jsx:13 outline #817661 on paper #FFF9EF => 4.27:1 (need 4.5) FAIL
+Welcome.jsx:64 headline accent ink #4A2C17 on primary #FFC93C => 8.22:1 (need 3) PASS
+Welcome.jsx:62 headline ink on paper #FFF9EF => 12.05:1 (need 4.5) PASS
+PromoBanner body ink on promo #FF7A59 => 4.92:1 (need 4.5) PASS
+PromoBanner chip ink on white #FFFFFF => 12.62:1 (need 4.5) PASS
+Welcome.jsx:73 subtitle ink-soft on paper => 8.88:1 (need 4.5) PASS
+WifiMemoCard:52 Sandi 12px ink-soft on high #EEE7DC => 7.57:1 (need 4.5) PASS
+WifiMemoCard:53 password on-primary #715500 on high #EEE7DC => 5.70:1 (need 4.5) PASS
+WifiMemoCard stamp ink on surface #FFF9EF => 12.05:1 (need 4.5) PASS
+```
+
+The claim "8,88:1" in the RFC fix note matches my independent figure exactly.
+
+- **Sweep for other `--color-outline` *text* usages:** grep of `text-[var(--color-outline)]` across `resources/js` → **0 matches**; grep of `color-outline` across `resources/js` → 3 matches, all non-text (`Welcome.jsx:89` border, `Welcome.jsx:134` `border-[...-variant]` with `text-[var(--color-ink-soft)]`, `WifiMemoCard.jsx:50` `border-[...-variant]`); `resources/css` → only the token definitions. **No remaining `--color-outline` text at any size on paper.**
+
+### Blocking part 2 — the two inaccurate RFC figures — **GENUINELY FIXED**
+
+- `RFCs/RFC-003-...md:118` (Round 1 fix note 1) now reads "**aksen headline → teks ink dengan highlighter `--color-primary` (8,22:1)**" — and my own recomputation of `--color-ink` **#4A2C17** over `--color-primary` **#FFC93C** gives **8.22:1** (pasted above). The wrong "11,30:1" is gone from the fix note; the only remaining occurrence of "11,30" is RFC:135, where the Round 2 note *explicitly records that the figure was wrong and what the correct one is* — correct documentation practice, not a defect.
+- Over-broad wording corrected: RFC:118 now scopes the claim to "**Seluruh pasangan teks/latar di komponen baru** dihitung ulang dan lulus AA (≥4,5:1 untuk teks normal)". With `Catalog.jsx` fixed, I re-verified a 10-pair sample of exactly that scope (above) — all PASS — plus Round 2's 33-pair computation, whose only failure was the Catalog pair now resolved. **The claim is now accurate.**
+
+### Non-blocking a11y — `WifiMemoCard` "Tersalin!" live region — **GENUINELY FIXED (correct pattern)**
+
+`resources/js/Components/WifiMemoCard.jsx:59-73`, actual JSX:
+
+```jsx
+<p
+    aria-live="polite"
+    className={`pointer-events-none absolute -right-2 -top-3 -rotate-[8deg] rounded-lg px-3 py-1 text-[16px] font-extrabold ${
+        copied ? 'border-2 border-[var(--color-promo)] bg-[var(--color-surface)] text-[var(--color-ink)]' : ''
+    }`}
+    role="status"
+>
+    {copied ? 'Tersalin! ✨' : ''}
+</p>
+```
+
+The claim matches the code. Judged as a screen-reader behavior question:
+
+- **Does it announce?** Yes. The region is mounted from first render with an explicit `role="status"` (an explicit role means even the empty element is kept in the accessibility tree, not pruned), so it satisfies the live-region precondition "region exists *before* the mutation". When `copied` flips, React mutates the text content of that **same, never-remounted** element → a genuine accessibility-tree content change → announced polite by NVDA/JAWS/VoiceOver/TalkBack. This is the standard pattern Round 2 asked for. There is no `key` on the element and no conditional ancestor (`Welcome.jsx:102-104` always renders `WifiMemoCard`), so no remount can break it.
+- **Phantom text gone?** Yes: while `copied` is false the node's content is `''`, so "Tersalin!" is not in the a11y tree before the copy.
+- **Does the empty `<p>` occupy layout?** No: it is `absolute` (out of flow) with `pointer-events-none`, so it neither shifts siblings nor blocks taps; with no background/border/text when empty it is visually invisible too. Residual padding (`px-3 py-1`) yields an invisible ~24px box outside the card edge — harmless.
+- **`role="status"` + `aria-live="polite"` both present?** Redundant but harmless — `role="status"` already implies `aria-live="polite"` (+ `aria-atomic="true"`); the explicit attribute is belt-and-braces and matches how validators/older AT read it. Not a defect.
+- **Remaining nit (cosmetic):** when the 1600 ms timer resets `copied` to `false`, the region mutates back to empty — a second live mutation that mainstream SRs suppress (nothing to speak), so no spurious chatter. Copy *failure* still produces no announcement (silent no-op at `WifiMemoCard.jsx:19`) — acceptable, though a failure message would be kinder.
+
+---
+
+## STEP 2 — No-regression sweep
+
+| Check | Verdict | Evidence |
+|---|---|---|
+| ARCH-4: `?table` locks dine-in without clobbering customer data | **PASS** | `OrderSessionController.php:22-27` — regex `'/^[1-9]\d{0,2}$/'` + `array_merge` keeps `name/phone/pickup_at`; tested by `test_takeaway_session_converts_to_dine_in_keeping_customer_data` (`WelcomeSessionTest.php:61-84`), which **ran** in STEP 0. |
+| ARCH-4: takeaway POST cannot overwrite a dine-in session's mode/table | **PASS** | `OrderSessionController.php:58-61` guard; only `name/phone/pickup_at` are merged (`:52-56`), `table_number` never touched; tested by `test_takeaway_submission_does_not_overwrite_dine_in_session` (`TakeawaySessionTest.php:94-110`), which ran. |
+| `?table=0` rejected | **PASS** | `OrderSessionController.php:22` (`[1-9]` first digit kills `0`, `00`, `007`); `test_zero_table_param_is_ignored` (`WelcomeSessionTest.php:50-59`) passed. |
+| SEC-1: sanitizes in `prepareForValidation` | **PASS** | `StoreTakeawayRequest.php:19-25` `trim(strip_tags())` on `name`, `trim()` on `phone`, with `is_string()` guards — untouched by `dfa9f47` (file not in the diff) and still exercised end-to-end by `test_html_in_name_is_stripped_before_storing`. |
+| SEC-2: rules unchanged | **PASS** | `StoreTakeawayRequest.php:36-58`: `min:3`, `max:60`, `regex:/^08[0-9]{8,11}$/`, `date_format:H:i` + 10-minute closure with `startOfMinute()`/`addDay()` — byte-identical to what Round 2 verified; messages (`:68-74`) unchanged. |
+| DATA-1 (no localStorage) | **PASS** | grep `localStorage` in `resources/js` → **0 matches**. |
+| No `dangerouslySetInnerHTML` / `innerHTML` | **PASS** | grep in `resources/js` → **0 matches**. |
+| CSRF untouched | **PASS** | `dfa9f47` touches 4 files only (RFC doc, `WifiMemoCard.jsx`, `Catalog.jsx`, this review file) — `bootstrap/app.php`/`routes/web.php` unchanged since Round 2's verification (default `web` group + Inertia v3 XSRF defaults + `app.blade.php:6` csrf meta still present). |
+| UI-2 (no pure black) | **PASS** | built CSS `#000000` count = **0**; no hex color literals in JSX (only hit is a JSDoc comment reference to DESIGN.md §181). |
+| CODE-1 (Pint) | **PASS** | `vendor\bin\pint --test` repo-wide → passed. |
+| CODE-3 (no debug/dead code) | **PASS** | grep `console.log|TODO|FIXME` in `resources/js` → 0; `WIFI_PASSWORD` still single-sourced (`validateTakeaway.js:6` → `WifiMemoCard.jsx:11`). |
+| AC matrix unchanged | **PASS** | ACs **1, 3, 5, 6, 7 genuinely guarded**; ACs **2 (auto-open half) and 4 (tap-trigger half) partially** — both disclosed by deviation #10. Nothing in the Round 2 fix touched any guard. |
+| Both bundle tests exist and would fail on regression | **PASS** | `WelcomeSessionTest.php:146-158` (`SKETCHKOPI`, `Diskon 10%`) and `:164-177` (`/session/takeaway`, `/katalog`, `ngopiyuk123`) read the manifest-resolved Welcome chunk; both **ran green in STEP 0** against `Welcome-q8tQzSqg.js`, where I re-confirmed all five strings are present. Tree-shaking reasoning from Round 2 still holds (each string's only source is the rendered wiring), and the skip-guard is unchanged. |
+| Fix commit scope | **PASS** | `git log --oneline -3` → `dfa9f47` / `6a977f9` / `2af29ba`. `git show dfa9f47 --stat` → **4 files, 334 insertions, 8 deletions**: `RFCs/RFC-003-...md` (14), `resources/js/Components/WifiMemoCard.jsx` (14), `resources/js/Pages/Catalog.jsx` (2), `reviews/REVIEW-RFC-003.md` (312 — append-only; `@@ -325,3 +325,315 @@` proves Rounds 1 and 2 were **not** modified, only the Round 2 section appended). No controller, request, route, config or test file touched. Working tree clean. |
+
+**Regression verdict: nothing regressed.** The Round 2 fix is strictly minimal — 2 source-line changes plus documentation — and every guard re-verified in Rounds 1/2 still passes live.
+
+---
+
+## STEP 3 — Deviations record: completeness judgement
+
+- **The original 11 Implementation Notes** — re-confirmed still accurate (file unchanged by `dfa9f47`; the relevant code paths re-read).
+- **The 3 formerly-unrecorded deviations** — all resolved in Round 1 and the RFC now reflects that: SEC-1 by `StoreTakeawayRequest` (letter followed, `RFC:121`), DESIGN.md modal spec by the `#FFF1D6` sheet + ±2,5° tape (`RFC:122`, cosmetic "stacked" residue still only implied), AC-5 evidence claim corrected (`RFC:107` + `RFC:120`).
+- **Round 1 item 7 (deferred with reasoning)** — the two deferrals are recorded at `RFC:124` with an explicit hard gate ("**harus diset `Asia/Jakarta` sebelum RFC-005/006**"). **Deferral is acceptable for THIS RFC**, and I re-derived the timezone reasoning independently rather than trusting it: the pickup value is a wall-clock `H:i`; WIB is always UTC+7, so a client-accepted pickup satisfies `pickup ≥ WIB_now + 10 min > UTC_now` whenever the WIB clock is ahead of UTC, and in the only window where the WIB clock reads lower than UTC (00:00–07:00 WIB) `pickup < UTC_now` triggers the `addDay()` branch, which always passes. The server rule can therefore be *looser* but never *stricter* for a WIB customer — no legitimate customer can be wrongly rejected by the UTC clock here. The flaw stays latent semantics ("overdue pickup", QRIS expiry) for RFC-005/006, exactly as recorded. Duplicate `RootPageTest`/`WelcomePageTest` and the modal focus-trap are pre-existing/RFC-008 scope, also recorded.
+- **New in Round 2's fix notes (3 items)** — all three claims verified as true in Step 1 above; the notes describe exactly what was built and don't overclaim.
+- **One newly-unrecorded, non-blocking change** — see New Finding #1 (stamp fade animation removed).
+
+---
+
+## STEP 4 — New findings introduced by the fix commit
+
+Fix commit scope verified above; three observations, none blocking:
+
+1. **The "Tersalin!" stamp fade animation was removed (cosmetic, RFC §3 wording).** The old markup carried `transition-opacity` + `opacity-100`/`opacity-0`; `dfa9f47` deleted both, and grep confirms **zero `transition-*` utilities remain anywhere in `resources/js`** (built CSS: `transition-opacity` 0, `opacity-0` 0, `opacity-100` 0 — only `tactile.css:20` keeps button transitions). The stamp now pops in/out instantly, while RFC §3 (`RFC:69`) says the click "**menampilkan animasi stempel 'Tersalin! ✨'**". Trivially fixable **without losing the a11y win**: keep `{copied ? 'Tersalin! ✨' : ''}` (content stays empty when idle → no phantom) and re-add `transition-opacity` with `opacity-0`/`opacity-100` — the text mutation is what announces, not the opacity.
+2. **RFC evidence bullet now stale by 0.39 kB.** `RFC:109` states "stylesheet 16.1 kB" (true at Round 2: 16.12); the current build is 15.71 kB because the fix removed transition/opacity utilities. Same trivial-variance class Rounds 1/2 already accepted, and the Round 2 verification line (`RFC:138`) wisely cites only test counts (38/239, 18/18, 0 `#000000`, pint passed — all reproduced exactly). Suggest dropping byte figures from evidence bullets entirely (they churn every build).
+3. **Process nit:** the Round 2 review text itself was committed *inside* the fix commit (`reviews/REVIEW-RFC-003.md` +312, append-only at `@@ -325,3`). Content is intact — Rounds 1 and 2 are preserved verbatim — but review history isn't independently versioned from fix history. Worth a `review-rfc:` commit of its own next time.
+
+---
+
+## STEP 5 — Review dimensions (Round 3)
+
+### 1. RFC Adherence — **PASS**
+- All 7 ACs implemented; ACs 1/3/5/6/7 genuinely test-guarded, ACs 2/4 partially with the tooling gap disclosed (deviation #10). Both bundle guards live and green against the real built artifact.
+- All 11 original + 3 formerly-unrecorded deviations accounted for; the two Round 2 fix-note figures now match independent recomputation (8,22:1 and 8,88:1); the over-broad AA claim is correctly scoped to new components and, post-Catalog-fix, holds.
+- Residual: RFC §3 "animasi stempel" vs the now-instant stamp (New Finding #1, cosmetic) and the stale 16.1 kB evidence figure (#2, trivial).
+
+### 2. Rules Compliance — **PASS**
+- **PASS:** UI-2 (built CSS 0× `#000000`; no hex literals in JSX), UI-1 (DESIGN.md modal sheet/tape still in place), UI-4 (hard shadows unchanged), UI-5 (tape/squiggle/pin), UI-6 (480px), ARCH-4 (both directions, tested), SEC-1 (FormRequest + `prepareForValidation`), SEC-2 (parity intact), DATA-1 (0 localStorage), CODE-1 (Pint passed repo-wide), CODE-2/3, 44px touch targets (`min-h-[44px]` in shipped CSS and ×2 in the Welcome chunk).
+- **Contrast:** every text pair I sampled passes AA; the sole remaining `--color-outline` usage is a non-text border; no `text-[var(--color-outline)]` survives in source or shipped CSS. Round 2's blocking contrast item is fully closed.
+
+### 3. Security — **PASS**
+- Sanitize-before-validate intact in one auditable place; no HTML sinks (re-grepped); CSRF wiring untouched by the fix commit; session writes ARCH-4-guarded; `?table` regex still strict. No findings ≥ minor.
+
+### 4. Performance — **PASS**
+- Zero DB access, zero N+1; stylesheet actually shrank (16.12 → 15.71 kB), Welcome chunk 14.47 kB. Nothing to fix.
+
+### 5. Maintainability — **PASS**
+- The fix is minimal and surgical (2 source lines + docs); comments in `WifiMemoCard.jsx:59-62` explain *why* the region is empty, which is exactly the kind of comment that prevents a well-meaning "cleanup" from reintroducing the phantom text. No dead code, no debug output.
+
+---
+
+## Overall Risk Level: **LOW** (unchanged)
+
+Round 2's blocking issue and a11y nit are both genuinely resolved in code and in the RFC's documentation, verified against the source, the shipped bundle, and independent contrast math — not against the author's claims. Everything that passed Rounds 1 and 2 still passes live. What remains is one cosmetic animation removal, one stale byte-size figure, and one process nit — none affects an AC, a rule, security, or a customer.
+
+## Summary
+
+RFC-003 is ready to move to **Reviewed**. The Catalog label now ships as `--color-ink-soft` (8.88:1, old utility absent from the built CSS and from the built Catalog chunk), with no other `--color-outline` text usage anywhere in the app; the RFC's two inaccurate figures are corrected (8,22:1 headline recomputed by me, 8,88:1 Catalog) and the blanket "all pairs pass AA" wording is now honestly scoped — and true for that scope; the "Tersalin!" live region follows the canonical always-mounted-empty-then-fill pattern, which actually announces and leaves no phantom text (explicit `role="status"` keeps even the empty node in the a11y tree; absolute positioning means no layout impact; the dual `role`/`aria-live` is redundant-but-harmless). The full no-regression sweep (ARCH-4 both directions, `?table=0`, SEC-1/SEC-2, DATA-1, XSS sinks, CSRF, UI-2, both bundle guards, commit scope) came back clean, 38/239 PHP + 18/18 JS + build + Pint all green, and the deviations record is complete — the UTC-timezone deferral remains correctly judged non-blocking for this RFC (re-derived: the server rule is provably never stricter for a WIB customer).
+
+## Blocking Issues (must fix before "Reviewed")
+
+**None.**
+
+## Improvement Suggestions (non-blocking)
+
+1. Restore the stamp's fade without breaking the a11y fix: keep `{copied ? 'Tersalin! ✨' : ''}` and re-add `transition-opacity` + `opacity-0`/`opacity-100` (content change is what announces) — closes New Finding #1 / RFC §3 "animasi stempel".
+2. Stop citing stylesheet/chunk byte sizes in RFC evidence bullets (`RFC:109` now says 16.1 kB vs an actual 15.71 kB) — cite "0 × `#000000` + test counts" instead; sizes churn on every build.
+3. Commit review files in their own `review-rfc:` commit rather than riding along inside the fix commit (New Finding #3).
+4. Carry forward Round 2's items unchanged: CI ordering (`npm run build` before `php artisan test`), `Asia/Jakarta` as a hard gate in RFC-005, `WIFI_PASSWORD`'s odd home in `validateTakeaway.js`, modal focus trap + Dusk coverage for AC-2/4 in RFC-008.
+5. Consider announcing copy *failure* in the same live region (the current silent no-op at `WifiMemoCard.jsx:19` leaves a screen-reader user unsure whether anything happened).

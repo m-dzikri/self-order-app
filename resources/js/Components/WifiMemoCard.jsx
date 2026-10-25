@@ -62,10 +62,10 @@ export default function WifiMemoCard({ ssid = 'CoratCoret_Guest', password = WIF
                 "Tersalin!" sits in the accessibility tree beforehand. */}
             <p
                 aria-live="polite"
-                className={`pointer-events-none absolute -right-2 -top-3 -rotate-[8deg] rounded-lg px-3 py-1 text-[16px] font-extrabold ${
+                className={`pointer-events-none absolute -right-2 -top-3 -rotate-[8deg] rounded-lg px-3 py-1 text-[16px] font-extrabold transition-opacity duration-200 ${
                     copied
-                        ? 'border-2 border-[var(--color-promo)] bg-[var(--color-surface)] text-[var(--color-ink)]'
-                        : ''
+                        ? 'border-2 border-[var(--color-promo)] bg-[var(--color-surface)] text-[var(--color-ink)] opacity-100'
+                        : 'opacity-0'
                 }`}
                 role="status"
             >
