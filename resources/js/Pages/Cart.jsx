@@ -10,8 +10,10 @@ import CustomizerDrawer from '../Components/CustomizerDrawer';
 import PaymentMethodSelector from '../Components/PaymentMethodSelector';
 import QRISModal from '../Components/QRISModal';
 import CashierInstructionModal from '../Components/CashierInstructionModal';
+import MemberButton from '../Components/MemberButton';
 import { formatRupiah } from '../Utils/formatRupiah';
 import { calculateCartTotals } from '../Utils/calculateCartTotals';
+import { triggerConfetti } from '../Utils/triggerConfetti';
 
 /**
  * Shopping Cart & Payment Checkout Page (RFC-005, RFC-006, F12-F19).
@@ -209,6 +211,9 @@ export default function Cart({
                 setCartItems([]);
                 setAppliedCoupon(null);
 
+                // Celebratory confetti shower (RFC-008, TC-008-3)
+                triggerConfetti();
+
                 // Open appropriate modal according to payment method (RFC-006)
                 if (createdOrder.payment_method === 'kasir') {
                     setActiveCashierOrder(createdOrder);
@@ -277,11 +282,14 @@ export default function Cart({
                     </div>
                 </div>
 
-                <div className="flex items-center gap-1 text-xs font-bold text-[var(--color-ink-soft)]">
-                    <span aria-hidden="true" className="material-symbols-outlined text-[18px]">
-                        receipt_long
-                    </span>
-                    <span>{totals.totalQuantity} Item</span>
+                <div className="flex items-center gap-2">
+                    <MemberButton onToast={(msg) => setFeedbackToast(msg)} />
+                    <div className="flex items-center gap-1 text-xs font-bold text-[var(--color-ink-soft)]">
+                        <span aria-hidden="true" className="material-symbols-outlined text-[18px]">
+                            receipt_long
+                        </span>
+                        <span>{totals.totalQuantity} Item</span>
+                    </div>
                 </div>
             </header>
 
@@ -448,6 +456,7 @@ export default function Cart({
                 order={activeQRISOrder}
                 onClose={() => setActiveQRISOrder(null)}
                 onPaymentSuccess={(order) => {
+                    triggerConfetti();
                     setActiveQRISOrder(null);
                     router.visit(`/order/track/${order.id || encodeURIComponent(order.order_code)}`);
                 }}

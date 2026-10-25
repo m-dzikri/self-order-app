@@ -41,8 +41,9 @@ class OrderController extends Controller
 
         $sessionType = $validated['session_type'] ?? ($session['type'] ?? 'takeaway');
         $tableNumber = $validated['table_number'] ?? ($session['table_number'] ?? null);
-        $customerName = $validated['customer_name'] ?? ($session['customer_name'] ?? $session['name'] ?? null);
-        $customerPhone = $validated['customer_phone'] ?? ($session['phone'] ?? null);
+        $user = $request->user();
+        $customerName = $validated['customer_name'] ?? ($session['customer_name'] ?? $session['name'] ?? $user?->name);
+        $customerPhone = $validated['customer_phone'] ?? ($session['phone'] ?? $user?->phone);
         $pickupTime = $validated['pickup_time'] ?? ($session['pickup_time'] ?? $session['pickupAt'] ?? null);
 
         // Strip HTML tags for security (SEC-1)
@@ -151,6 +152,7 @@ class OrderController extends Controller
                 : Order::STATUS_CONFIRMED;
 
             $order = Order::create([
+                'user_id' => $request->user()?->id,
                 'order_code' => $orderCode,
                 'session_type' => $sessionType,
                 'table_number' => $tableNumber,
