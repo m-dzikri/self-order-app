@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import axios from 'axios';
 import AppLayout from '../Layouts/AppLayout';
 import CartItemCard from '../Components/CartItemCard';
@@ -449,7 +449,7 @@ export default function Cart({
                 onClose={() => setActiveQRISOrder(null)}
                 onPaymentSuccess={(order) => {
                     setActiveQRISOrder(null);
-                    setFeedbackToast(`✨ Pembayaran pesanan ${order.order_code} berhasil! Terima kasih!`);
+                    router.visit(`/order/track/${order.id || encodeURIComponent(order.order_code)}`);
                 }}
                 onSwitchToCashier={() => {
                     const current = activeQRISOrder;
@@ -468,8 +468,13 @@ export default function Cart({
                 order={activeCashierOrder}
                 onClose={() => setActiveCashierOrder(null)}
                 onViewTracker={() => {
+                    const target = activeCashierOrder;
                     setActiveCashierOrder(null);
-                    setFeedbackToast(`Pesanan ${activeCashierOrder?.order_code} tercatat. Silakan bayar di kasir.`);
+                    if (target?.id) {
+                        router.visit(`/order/track/${target.id}`);
+                    } else if (target?.order_code) {
+                        router.visit(`/order/track/${encodeURIComponent(target.order_code)}`);
+                    }
                 }}
             />
         </AppLayout>

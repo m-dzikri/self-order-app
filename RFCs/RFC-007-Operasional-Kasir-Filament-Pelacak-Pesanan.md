@@ -82,11 +82,21 @@ resources/
 
 ## 4. Acceptance Criteria
 
-- [ ] Setelah checkout, pelanggan otomatis dialihkan ke halaman pelacak pesanan `/order/track/{id}`.
-- [ ] Pesanan bayar di kasir menampilkan status awal "Menunggu Pembayaran di Kasir".
-- [ ] Panel Filament Admin `/admin/orders` menampilkan seluruh pesanan masuk secara real-time.
-- [ ] Kasir dapat menekan tombol "Konfirmasi Lunas", dan status pesanan berubah menjadi `confirmed`.
-- [ ] Pelacak pesanan pelanggan mencerminkan perubahan status ke "Pesanan Diterima" dan "Sedang Diracik".
-- [ ] Stepper visual menampilkan ikon aktif dengan animasi denyut.
-- [ ] Tombol simulasi demo memajukan status pesanan secara instan saat diklik.
-- [ ] Pelanggan hanya dapat melihat status pesanan miliknya sendiri.
+- [x] Setelah checkout, pelanggan otomatis dialihkan ke halaman pelacak pesanan `/order/track/{id}`.
+- [x] Pesanan bayar di kasir menampilkan status awal "Menunggu Pembayaran di Kasir".
+- [x] Panel Filament Admin `/admin/orders` menampilkan seluruh pesanan masuk secara real-time.
+- [x] Kasir dapat menekan tombol "Konfirmasi Lunas", dan status pesanan berubah menjadi `confirmed`.
+- [x] Pelacak pesanan pelanggan mencerminkan perubahan status ke "Pesanan Diterima" dan "Sedang Diracik".
+- [x] Stepper visual menampilkan ikon aktif dengan animasi denyut.
+- [x] Tombol simulasi demo memajukan status pesanan secara instan saat diklik.
+- [x] Pelanggan hanya dapat melihat status pesanan miliknya sendiri.
+
+---
+
+## 5. Implementation Notes
+
+- **Filament Admin Operasional**: Resource `OrderResource` dan `ListOrders` menyediakan tab status filter (*Semua, Menunggu Kasir, Sedang Diproses, Siap Diambil/Diantar, Selesai*) dengan live polling (4 detik) dan aksi transisi status: "Konfirmasi Lunas" (`unpaid_cashier` ➔ `confirmed`), "Mulai Racik" (`confirmed` ➔ `in_progress`), "Tandai Siap" (`in_progress` ➔ `ready`), dan "Selesai" (`ready` ➔ `completed`).
+- **Halaman Pelacak Real-Time**: `Tracker.jsx` mengadopsi 100% sistem desain `06_pelacak_pesanan_real_time/code.html`, mencakup top banner washi tape, notepad perkiraan waktu dengan animasi denyut, visual stepper 4/5 tahap dengan progress bar, kanvas interaktif "Corat-Coret Mini", akordeon rincian struk kasir bergerigi (*zigzag cut*) dengan stempel lunas/belum lunas, tombol "Panggil Pelayan/Barista", serta polling background setiap 3.5 detik.
+- **Simulasi Progres Demo (F22)**: Komponen `StatusSimulationControls.jsx` terhubung dengan endpoint `POST /order/{order_code}/simulate-status` untuk mempermudah evaluasi status secara instan tanpa perlu berpindah tab admin.
+- **Isolasi Keamanan (SEC-3)**: Mengikat `active_order_ids` dan `current_order_id` pada session pelanggan saat pembuatan pesanan dan memvalidasi akses di `OrderTrackerController::authorizeOrderAccess`, menolak tamu tanpa otorisasi dengan status 403 Forbidden.
+
