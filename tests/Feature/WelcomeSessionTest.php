@@ -2,12 +2,15 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
 class WelcomeSessionTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_table_qr_locks_dine_in_mode_with_table_number(): void
     {
         // TC-003-1: ?table=12 mengunci mode dine-in.
