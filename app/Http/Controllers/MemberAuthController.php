@@ -40,6 +40,16 @@ class MemberAuthController extends Controller
 
         Auth::login($user);
 
+        // Sinkronkan order_session ke data member baru dan reset sesi pesanan tamu sebelumnya
+        $session = (array) $request->session()->get('order_session', []);
+        $session['customer_name'] = $cleanName;
+        $session['customer_phone'] = $cleanPhone;
+        $session['name'] = $cleanName;
+        $session['phone'] = $cleanPhone;
+        $request->session()->put('order_session', $session);
+        $request->session()->put('active_order_ids', []);
+        $request->session()->forget('current_order_id');
+
         return response()->json([
             'success' => true,
             'message' => "Selamat bergabung, {$cleanName}! Akun member Kopi Corat-Coret kamu sudah aktif. ✨",
@@ -49,6 +59,7 @@ class MemberAuthController extends Controller
                 'phone' => $user->phone,
                 'role' => $user->role,
             ],
+            'active_order_id' => null,
         ], 201);
     }
 
@@ -77,6 +88,28 @@ class MemberAuthController extends Controller
 
         Auth::login($user);
 
+        // Sinkronkan order_session ke akun member yang sedang login
+        $session = (array) $request->session()->get('order_session', []);
+        $session['customer_name'] = $user->name;
+        $session['customer_phone'] = $user->phone;
+        $session['name'] = $user->name;
+        $session['phone'] = $user->phone;
+        $request->session()->put('order_session', $session);
+
+        // Ambil hanya pesanan aktif milik member ini (bukan pesanan tamu terdahulu)
+        $memberActiveOrders = Order::where('user_id', $user->id)
+            ->whereNotIn('status', [Order::STATUS_COMPLETED, Order::STATUS_CANCELLED])
+            ->pluck('id')
+            ->toArray();
+
+        $request->session()->put('active_order_ids', $memberActiveOrders);
+        $latestActiveId = ! empty($memberActiveOrders) ? end($memberActiveOrders) : null;
+        if ($latestActiveId) {
+            $request->session()->put('current_order_id', $latestActiveId);
+        } else {
+            $request->session()->forget('current_order_id');
+        }
+
         return response()->json([
             'success' => true,
             'message' => "Selamat datang kembali, {$user->name}! ☕",
@@ -86,6 +119,7 @@ class MemberAuthController extends Controller
                 'phone' => $user->phone,
                 'role' => $user->role,
             ],
+            'active_order_id' => $latestActiveId,
         ]);
     }
 
@@ -95,6 +129,7 @@ class MemberAuthController extends Controller
     public function logout(Request $request): JsonResponse
     {
         Auth::logout();
+        $request->session()->forget(['order_session', 'active_order_ids', 'current_order_id']);
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
@@ -118,12 +153,8 @@ class MemberAuthController extends Controller
             ], 401);
         }
 
-        $orders = Order::where(function ($query) use ($user) {
-            $query->where('user_id', $user->id);
-            if ($user->phone) {
-                $query->orWhere('customer_phone', $user->phone);
-            }
-        })
+        // Hanya pesanan yang terdaftar di bawah user_id member ini (mencegah pesanan guest bocor)
+        $orders = Order::where('user_id', $user->id)
             ->with(['items'])
             ->orderBy('created_at', 'desc')
             ->get();

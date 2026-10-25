@@ -232,4 +232,105 @@ class MemberAuthTest extends TestCase
         $response = $this->getJson('/member/history');
         $response->assertStatus(401);
     }
+
+    public function test_guest_orders_with_same_phone_are_not_included_in_member_history(): void
+    {
+        $budi = User::create([
+            'name' => 'Budi Santoso',
+            'phone' => '081234567890',
+            'email' => '081234567890@member.kopicoratcoret.com',
+            'password' => Hash::make('123456'),
+            'role' => 'customer',
+        ]);
+
+        // Pesanan guest oleh 'Febri' dengan nomor telepon yang sama tapi user_id null
+        $guestOrder = Order::create([
+            'user_id' => null,
+            'order_code' => '#TK-FEBRI',
+            'session_type' => 'takeaway',
+            'customer_name' => 'Febri Guest',
+            'customer_phone' => '081234567890',
+            'payment_method' => 'qris',
+            'status' => 'confirmed',
+            'subtotal' => 25000,
+            'discount' => 0,
+            'pb1_tax' => 2500,
+            'total' => 27500,
+        ]);
+
+        // Pesanan resmi milik Budi
+        $budiOrder = Order::create([
+            'user_id' => $budi->id,
+            'order_code' => '#ORD-BUDI',
+            'session_type' => 'dine_in',
+            'customer_name' => 'Budi Santoso',
+            'customer_phone' => '081234567890',
+            'payment_method' => 'kasir',
+            'status' => 'confirmed',
+            'subtotal' => 30000,
+            'discount' => 0,
+            'pb1_tax' => 3000,
+            'total' => 33000,
+        ]);
+
+        $response = $this->actingAs($budi)->getJson('/member/history');
+
+        $response->assertOk();
+        $response->assertJsonFragment(['order_code' => '#ORD-BUDI']);
+        $response->assertJsonMissing(['order_code' => '#TK-FEBRI']);
+    }
+
+    public function test_logging_in_as_member_resets_previous_guest_active_order_session(): void
+    {
+        $budi = User::create([
+            'name' => 'Budi Santoso',
+            'phone' => '081234567890',
+            'email' => '081234567890@member.kopicoratcoret.com',
+            'password' => Hash::make('123456'),
+            'role' => 'customer',
+        ]);
+
+        // Simulasi sesi tamu terdahulu (Febri)
+        $response = $this->withSession([
+            'order_session' => ['name' => 'Febri', 'phone' => '081234567890'],
+            'active_order_ids' => [999],
+            'current_order_id' => 999,
+        ])->postJson('/member/login', [
+            'phone' => '081234567890',
+            'pin' => '123456',
+        ]);
+
+        $response->assertOk();
+        $this->assertEquals('Budi Santoso', session('order_session.customer_name'));
+        $this->assertNotContains(999, session('active_order_ids', []));
+    }
+
+    public function test_authenticated_customer_cannot_view_guest_order_tracker(): void
+    {
+        $budi = User::create([
+            'name' => 'Budi Santoso',
+            'phone' => '081234567890',
+            'email' => '081234567890@member.kopicoratcoret.com',
+            'password' => Hash::make('123456'),
+            'role' => 'customer',
+        ]);
+
+        $guestOrder = Order::create([
+            'user_id' => null,
+            'order_code' => '#TK-GUEST',
+            'session_type' => 'takeaway',
+            'customer_name' => 'Febri Guest',
+            'customer_phone' => '081234567890',
+            'payment_method' => 'qris',
+            'status' => 'confirmed',
+            'subtotal' => 25000,
+            'discount' => 0,
+            'pb1_tax' => 2500,
+            'total' => 27500,
+        ]);
+
+        // Budi login mencoba membuka tracker pesanan milik Febri
+        $response = $this->actingAs($budi)->get("/order/track/{$guestOrder->id}");
+        $response->assertForbidden();
+    }
 }

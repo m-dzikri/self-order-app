@@ -178,4 +178,33 @@ class WelcomeSessionTest extends TestCase
         $this->assertStringContainsString('/katalog', $bundle, 'CTA Mulai Pesan tidak menyambung ke /katalog.');
         $this->assertStringContainsString('ngopiyuk123', $bundle, 'Sandi Wi-Fi tidak ada di bundel Welcome (AC-4).');
     }
+
+    public function test_visitor_can_switch_mode_from_dine_in_to_takeaway(): void
+    {
+        $response = $this->withSession([
+            'order_session' => ['mode' => 'dine_in', 'table_number' => 10],
+        ])->post('/session/switch-mode', [
+            'mode' => 'takeaway',
+        ]);
+
+        $response->assertRedirect();
+        $session = session('order_session');
+        $this->assertSame('takeaway', $session['mode']);
+        $this->assertNull($session['table_number']);
+    }
+
+    public function test_visitor_can_switch_mode_from_takeaway_to_dine_in(): void
+    {
+        $response = $this->withSession([
+            'order_session' => ['mode' => 'takeaway'],
+        ])->post('/session/switch-mode', [
+            'mode' => 'dine_in',
+            'table_number' => 8,
+        ]);
+
+        $response->assertRedirect();
+        $session = session('order_session');
+        $this->assertSame('dine_in', $session['mode']);
+        $this->assertSame(8, $session['table_number']);
+    }
 }

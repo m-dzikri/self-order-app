@@ -22,6 +22,14 @@
     --color-primary: #ffc93c;
     --color-on-primary: #715500;
     --color-primary-dim: #f4bf32;
+    --color-primary-container: #ffc93c;
+    --color-on-primary-container: #715500;
+
+    --color-secondary: #7b563e;
+    --color-secondary-container: #ffcdaf;
+    --color-on-secondary-container: #7a553d;
+
+    --color-tertiary-container: #ffc3b4;
 
     --color-container: #fff1d6;
     --color-promo: #ff7a59;

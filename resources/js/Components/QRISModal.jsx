@@ -234,39 +234,73 @@ export default function QRISModal({
 
                 {/* Interactive Buttons */}
                 <div className="mt-4 space-y-2">
-                    {/* Primary Button: Saya Sudah Bayar */}
+                    {/* Primary Button: Bayar via Midtrans Snap */}
+                    {order.snap_token && typeof window !== 'undefined' && window.snap ? (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                window.snap.pay(order.snap_token, {
+                                    onSuccess: () => {
+                                        setIsPaidSuccess(true);
+                                        setTimeout(() => onPaymentSuccess?.(order), 1000);
+                                    },
+                                    onPending: () => {
+                                        onPaymentSuccess?.(order);
+                                    },
+                                    onError: (err) => {
+                                        console.error('Midtrans error', err);
+                                    },
+                                    onClose: () => {
+                                        // user closed popup
+                                    },
+                                });
+                            }}
+                            disabled={isExpired || isPaidSuccess}
+                            className="btn-tactile flex w-full min-h-[48px] items-center justify-center gap-2 rounded-xl border-2 border-[var(--color-ink)] bg-[var(--color-primary)] px-4 py-2.5 text-sm font-black text-[var(--color-ink)] marker-shadow-md hover:bg-[#FFE17D] disabled:opacity-50 active:translate-y-0.5"
+                        >
+                            <span aria-hidden="true" className="material-symbols-outlined text-[20px]">
+                                credit_card
+                            </span>
+                            <span>Bayar Sekarang via Midtrans</span>
+                            <span aria-hidden="true" className="material-symbols-outlined text-[18px]">
+                                arrow_forward
+                            </span>
+                        </button>
+                    ) : null}
+
+                    {/* Secondary Button: Saya Sudah Bayar (Verifikasi) */}
                     <button
                         type="button"
                         onClick={handleConfirmPayment}
                         disabled={isCheckingPayment || isPaidSuccess || isExpired}
-                        className="btn-tactile flex w-full min-h-[46px] items-center justify-center gap-2 rounded-xl border-2 border-[var(--color-ink)] bg-[var(--color-primary)] px-4 py-2.5 text-sm font-extrabold text-[var(--color-ink)] marker-shadow-md hover:bg-[var(--color-primary)] disabled:opacity-50 active:translate-y-0.5"
+                        className="btn-tactile flex w-full min-h-[42px] items-center justify-center gap-2 rounded-xl border-2 border-[var(--color-ink)] bg-[var(--color-surface-container-low)] px-4 py-2 text-xs font-extrabold text-[var(--color-ink)] shadow-[2px_2px_0px_var(--color-ink)] hover:bg-[var(--color-surface-container)] disabled:opacity-50 active:translate-y-0.5"
                     >
                         {isCheckingPayment ? (
                             <>
                                 <span className="animate-spin text-base">⏳</span>
-                                <span>Mengecek Pembayaran...</span>
+                                <span>Mengecek Status Pembayaran...</span>
                             </>
                         ) : isPaidSuccess ? (
                             <>
                                 <span>✨</span>
-                                <span>Pembayaran Diterima!</span>
+                                <span>Pembayaran Terverifikasi!</span>
                             </>
                         ) : (
                             <>
-                                <span>Saya Sudah Bayar</span>
-                                <span aria-hidden="true" className="material-symbols-outlined text-[18px]">
-                                    arrow_forward
+                                <span aria-hidden="true" className="material-symbols-outlined text-[16px]">
+                                    check_circle
                                 </span>
+                                <span>Saya Sudah Bayar (Verifikasi)</span>
                             </>
                         )}
                     </button>
 
-                    {/* Secondary Button: Unduh QR Code */}
+                    {/* Tertiary Button: Unduh QR Code */}
                     <button
                         type="button"
                         onClick={handleDownloadQR}
                         disabled={isExpired}
-                        className="btn-tactile flex w-full min-h-[40px] items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--color-ink)] bg-[var(--color-surface-container-low)] px-4 py-2 text-xs font-extrabold text-[var(--color-ink)] shadow-[2px_2px_0px_var(--color-ink)] hover:bg-[var(--color-surface-container)] disabled:opacity-40 active:translate-y-0.5"
+                        className="btn-tactile flex w-full min-h-[36px] items-center justify-center gap-1.5 rounded-xl border border-[var(--color-ink)] bg-transparent px-4 py-1.5 text-xs font-bold text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-container)] disabled:opacity-40 active:translate-y-0.5"
                     >
                         <span aria-hidden="true" className="material-symbols-outlined text-[16px]">
                             {downloadedFeedback ? 'done' : 'download'}

@@ -22,20 +22,31 @@ class OrderSessionController extends Controller
         if (is_string($table) && preg_match('/^[1-9]\d{0,2}$/', $table)) {
             $request->session()->put('order_session', array_merge(
                 $request->session()->get('order_session', []),
-                ['mode' => 'dine_in', 'table_number' => (int) $table],
+                [
+                    'mode' => 'dine_in',
+                    'table_number' => (int) $table,
+                ],
             ));
         }
 
         $orderSession = $request->session()->get('order_session', []);
+        $isDineIn = ($orderSession['mode'] ?? $orderSession['type'] ?? 'takeaway') === 'dine_in'
+            && ! empty($orderSession['table_number']);
 
         return Inertia::render('Welcome', [
             'appName' => config('app.name', 'Kopi Corat-Coret'),
-            'mode' => $orderSession['mode'] ?? 'takeaway',
-            'tableNumber' => $orderSession['table_number'] ?? null,
+            'mode' => $isDineIn ? 'dine_in' : 'takeaway',
+            'tableNumber' => $isDineIn ? (int) $orderSession['table_number'] : null,
             'orderSession' => [
-                'name' => $orderSession['name'] ?? null,
-                'phone' => $orderSession['phone'] ?? null,
-                'pickupAt' => $orderSession['pickup_at'] ?? null,
+                'type' => $isDineIn ? 'dine_in' : 'takeaway',
+                'mode' => $isDineIn ? 'dine_in' : 'takeaway',
+                'table_number' => $isDineIn ? (int) $orderSession['table_number'] : null,
+                'name' => $orderSession['name'] ?? $orderSession['customer_name'] ?? null,
+                'customer_name' => $orderSession['customer_name'] ?? $orderSession['name'] ?? null,
+                'phone' => $orderSession['phone'] ?? $orderSession['customer_phone'] ?? null,
+                'customer_phone' => $orderSession['customer_phone'] ?? $orderSession['phone'] ?? null,
+                'pickupAt' => $orderSession['pickup_at'] ?? $orderSession['pickup_time'] ?? null,
+                'pickup_time' => $orderSession['pickup_time'] ?? $orderSession['pickup_at'] ?? null,
             ],
         ]);
     }
@@ -63,5 +74,31 @@ class OrderSessionController extends Controller
         $request->session()->put('order_session', $order);
 
         return redirect()->route('welcome');
+    }
+
+    /**
+     * Explicitly switch between takeaway and dine-in mode.
+     */
+    public function switchMode(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'mode' => 'required|in:takeaway,dine_in',
+            'table_number' => 'nullable|integer|min:1|max:999',
+        ]);
+
+        $session = (array) $request->session()->get('order_session', []);
+
+        if ($validated['mode'] === 'takeaway') {
+            $session['mode'] = 'takeaway';
+            $session['table_number'] = null;
+        } else {
+            $session['mode'] = 'dine_in';
+            $session['table_number'] = (int) ($validated['table_number'] ?? $session['table_number'] ?? 1);
+        }
+        unset($session['type']);
+
+        $request->session()->put('order_session', $session);
+
+        return redirect()->back();
     }
 }

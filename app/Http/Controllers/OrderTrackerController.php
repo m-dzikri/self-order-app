@@ -24,6 +24,7 @@ class OrderTrackerController extends Controller
         return Inertia::render('Tracker', [
             'order' => [
                 'id' => $order->id,
+                'user_id' => $order->user_id,
                 'order_code' => $order->order_code,
                 'session_type' => $order->session_type,
                 'table_number' => $order->table_number,
@@ -141,10 +142,16 @@ class OrderTrackerController extends Controller
         $activeOrders = (array) $request->session()->get('active_order_ids', []);
         $currentOrderId = $request->session()->get('current_order_id');
 
-        $isOwner = in_array($order->id, $activeOrders) || $currentOrderId == $order->id;
-        $isAdmin = auth()->check();
+        // Staf / Admin kafe berhak melihat seluruh pesanan (Filament, KDS, Kasir)
+        $isAdmin = auth()->check() && auth()->user()->role !== 'customer';
 
-        if (! $isOwner && ! $isAdmin) {
+        // Member terotentikasi berhak melihat pesanan miliknya sendiri
+        $isMemberOwner = auth()->check() && $order->user_id !== null && $order->user_id === auth()->id();
+
+        // Tamu (guest) hanya berhak melihat pesanan guest yang ada di sesi aktif browsernya
+        $isGuestOwner = ! auth()->check() && $order->user_id === null && (in_array($order->id, $activeOrders) || $currentOrderId == $order->id);
+
+        if (! $isAdmin && ! $isMemberOwner && ! $isGuestOwner) {
             abort(403, 'Akses ditolak: Anda hanya dapat memantau pesanan aktif milik Anda sendiri.');
         }
     }

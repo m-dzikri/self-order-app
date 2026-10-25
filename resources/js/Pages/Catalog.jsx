@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 import SearchBar from '../Components/SearchBar';
 import CategoryTabs from '../Components/CategoryTabs';
@@ -7,12 +7,16 @@ import MenuCard from '../Components/MenuCard';
 import EmptyMenuState from '../Components/EmptyMenuState';
 import CustomizerDrawer from '../Components/CustomizerDrawer';
 import MemberButton from '../Components/MemberButton';
+import SwitchModeModal from '../Components/SwitchModeModal';
+import QRScannerModal from '../Components/QRScannerModal';
 import { formatRupiah } from '../Utils/formatRupiah';
 
 export default function Catalog({ appName = 'Kopi Corat-Coret', categories = [], menus = [], orderSession = {} }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategorySlug, setSelectedCategorySlug] = useState('all');
     const [activeCustomizerMenu, setActiveCustomizerMenu] = useState(null);
+    const [isSwitchModalOpen, setIsSwitchModalOpen] = useState(false);
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [cartCount, setCartCount] = useState(() => {
         try {
             const raw = localStorage.getItem('sketchbook_cart');
@@ -103,14 +107,26 @@ export default function Catalog({ appName = 'Kopi Corat-Coret', categories = [],
                             <span className="font-extrabold text-sm text-[var(--color-ink)]">
                                 {appName}
                             </span>
-                            {orderSession.type === 'dine_in' && orderSession.table_number ? (
-                                <span className="rounded-sm border border-[var(--color-ink)] bg-[var(--color-primary)] px-1.5 py-0.2 text-[11px] font-extrabold text-[var(--color-ink)] -rotate-1 shadow-[1px_1px_0px_var(--color-ink)]">
-                                    Meja {orderSession.table_number}
-                                </span>
+                            {(orderSession?.type === 'dine_in' || orderSession?.mode === 'dine_in') && orderSession?.table_number ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsSwitchModalOpen(true)}
+                                    title="Klik untuk beralih ke Takeaway"
+                                    className="group flex items-center gap-1 rounded-sm border border-[var(--color-ink)] bg-[var(--color-primary)] px-1.5 py-0.2 text-[11px] font-extrabold text-[var(--color-ink)] -rotate-1 shadow-[1px_1px_0px_var(--color-ink)] hover:bg-[var(--color-primary-dim)] cursor-pointer transition-all"
+                                >
+                                    <span>Meja {orderSession.table_number}</span>
+                                    <span className="material-symbols-outlined text-[13px] opacity-60 group-hover:opacity-100">swap_horiz</span>
+                                </button>
                             ) : (
-                                <span className="rounded-sm border border-[var(--color-ink)] bg-[var(--color-surface-container-high)] px-1.5 py-0.2 text-[11px] font-bold text-[var(--color-ink)] rotate-1 shadow-[1px_1px_0px_var(--color-ink)]">
-                                    Takeaway
-                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsScannerOpen(true)}
+                                    title="Klik untuk pindai QR Meja & beralih ke Makan di Tempat (Dine-In)"
+                                    className="group flex items-center gap-1 rounded-sm border border-[var(--color-ink)] bg-[var(--color-surface-container-high)] px-1.5 py-0.2 text-[11px] font-bold text-[var(--color-ink)] rotate-1 shadow-[1px_1px_0px_var(--color-ink)] hover:bg-[var(--color-primary)] cursor-pointer transition-all"
+                                >
+                                    <span>Takeaway</span>
+                                    <span className="material-symbols-outlined text-[13px] opacity-70 group-hover:opacity-100">qr_code_scanner</span>
+                                </button>
                             )}
                         </div>
                         <h1 className="text-xl font-extrabold text-[var(--color-ink)]">
@@ -200,6 +216,33 @@ export default function Catalog({ appName = 'Kopi Corat-Coret', categories = [],
                 isOpen={Boolean(activeCustomizerMenu)}
                 onClose={() => setActiveCustomizerMenu(null)}
                 onAddToCart={handleAddToCart}
+            />
+
+            {/* Switch Mode Confirmation Modal */}
+            <SwitchModeModal
+                isOpen={isSwitchModalOpen}
+                onClose={() => setIsSwitchModalOpen(false)}
+                currentTableNumber={orderSession?.table_number}
+                onOpenScanner={() => setIsScannerOpen(true)}
+            />
+
+            {/* In-App Camera QR Scanner Modal */}
+            <QRScannerModal
+                isOpen={isScannerOpen}
+                onClose={() => setIsScannerOpen(false)}
+                onDetectedTable={(tableNum) => {
+                    setIsScannerOpen(false);
+                    router.post(
+                        '/session/switch-mode',
+                        { mode: 'dine_in', table_number: tableNum },
+                        {
+                            preserveScroll: true,
+                            onSuccess: () => {
+                                setCartNotice(`Sesi dialihkan ke Meja ${tableNum}!`);
+                            },
+                        }
+                    );
+                }}
             />
 
             {/* Floating Cart Dock (RFC-005, UI-6) */}
