@@ -91,7 +91,21 @@ class CatalogPageTest extends TestCase
 
         $bundleContent = file_get_contents($bundleFile);
         $this->assertStringContainsString('Kategori Sketsa', $bundleContent);
-        $this->assertStringContainsString('Pilihan Suhu', $bundleContent);
         $this->assertStringContainsString('sketchbook_cart', $bundleContent);
+
+        // CustomizerDrawer may be inline or code-split into a shared chunk
+        $customizerFound = str_contains($bundleContent, 'Pilihan Suhu');
+        if (! $customizerFound && isset($manifest['resources/js/Pages/Catalog.jsx']['imports'])) {
+            foreach ($manifest['resources/js/Pages/Catalog.jsx']['imports'] as $importKey) {
+                if (isset($manifest[$importKey]['file'])) {
+                    $chunkContent = file_get_contents(public_path('build/'.$manifest[$importKey]['file']));
+                    if (str_contains($chunkContent, 'Pilihan Suhu')) {
+                        $customizerFound = true;
+                        break;
+                    }
+                }
+            }
+        }
+        $this->assertTrue($customizerFound, 'Customizer drawer content with "Pilihan Suhu" was not found in catalog bundle or its chunk imports.');
     }
 }

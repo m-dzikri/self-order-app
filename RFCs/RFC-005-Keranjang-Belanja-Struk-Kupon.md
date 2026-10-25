@@ -66,11 +66,19 @@ resources/
 
 ## 4. Acceptance Criteria
 
-- [ ] Keranjang menampilkan seluruh item yang ditambahkan dari katalog dengan varian lengkap.
-- [ ] Menambah atau mengurangi kuantitas item langsung memperbarui subtotal.
-- [ ] Tombol hapus menghapus item dari keranjang dengan animasi visual.
-- [ ] Kode kupon `SKETCHKOPI` memotong 10% subtotal belanja.
-- [ ] Pajak PB1 dihitung tepat 10% dari nominal setelah diskon.
-- [ ] Total bayar akhir adalah penjumlahan subtotal setelah diskon ditambah PB1 (tanpa salah desimal).
-- [ ] Tampilan nota memiliki batas bawah gerigi zigzag sesuai desain mockup.
-- [ ] Jika keranjang kosong, tampil doodle "Keranjangmu masih kosong nih!" dan tombol CTA menu.
+- [x] Keranjang menampilkan seluruh item yang ditambahkan dari katalog dengan varian lengkap.
+- [x] Menambah atau mengurangi kuantitas item langsung memperbarui subtotal.
+- [x] Tombol hapus menghapus item dari keranjang dengan animasi visual.
+- [x] Kode kupon `SKETCHKOPI` memotong 10% subtotal belanja.
+- [x] Pajak PB1 dihitung tepat 10% dari nominal setelah diskon.
+- [x] Total bayar akhir adalah penjumlahan subtotal setelah diskon ditambah PB1 (tanpa salah desimal).
+- [x] Tampilan nota memiliki batas bawah gerigi zigzag sesuai desain mockup.
+- [x] Jika keranjang kosong, tampil doodle "Keranjangmu masih kosong nih!" dan tombol CTA menu.
+
+---
+
+## 5. Implementation Notes
+
+- **Modul Perhitungan Murni (`calculateCartTotals.js`):** Aturan kalkulasi keranjang diekstraksi ke berkas utilitas murni dan diuji dengan 7 test case unit Node.js, termasuk pengujian TC-005-2, TC-005-3, dan pencocokan nominal persis terhadap mockup visual `04_keranjang_struk/code.html` (Subtotal Rp 54.000, Diskon 10% Rp 5.400, PB1 10% Rp 4.860, Total Bayar Rp 53.460).
+- **Edit Varian Interaktif (F12):** Komponen `CustomizerDrawer.jsx` diperluas agar menerima prop `initialPayload`. Ketika tombol pensil/stylus ditekan pada kartu item keranjang, drawer terbuka dalam keadaan terhidrasi dengan opsi varian item tersebut dan tombol aksi berubah menjadi "Simpan Perubahan", lalu memperbarui item di `localStorage['sketchbook_cart']`.
+- **Dukungan Code-Splitting Vite pada Pengujian:** Karena `CustomizerDrawer` diimpor oleh `Catalog.jsx` dan `Cart.jsx`, bundler Vite secara otomatis memisahkan komponen tersebut menjadi chunk bersama (`CustomizerDrawer-*.js`). Pengujian `CatalogPageTest` disesuaikan agar memeriksa konten bundle utama beserta chunk yang diimpor.

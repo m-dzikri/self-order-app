@@ -27,7 +27,7 @@ Setiap RFC diimplementasikan dengan menjalankan perintah:
 | **RFC-002** | [Dashboard Admin Filament – Manajemen Menu, Kategori, Varian & Stok](file:///d:/Projects/stud-web/RFCs/RFC-002-Dashboard-Admin-Filament-Menu-Kategori.md) | F31 | RFC-001 | Medium | Implemented |
 | **RFC-003** | [Alur Sesi, Deteksi Meja QR, dan Formulir Takeaway](file:///d:/Projects/stud-web/RFCs/RFC-003-Alur-Sesi-Meja-QR-Takeaway.md) | F1, F2, F3, F4, F23, F26 | RFC-001 | Medium | Reviewed |
 | **RFC-004** | [Penjelajahan Katalog Menu & Drawer Kustomisasi Minuman/Makanan](file:///d:/Projects/stud-web/RFCs/RFC-004-Katalog-Menu-Drawer-Kustomisasi.md) | F5, F6, F7, F8, F9, F10, F11 | RFC-001, RFC-002, RFC-003 | High | Implemented |
-| **RFC-005** | [Keranjang Belanja, Kupon Promo & Nota Struk Kasir Robek](file:///d:/Projects/stud-web/RFCs/RFC-005-Keranjang-Belanja-Struk-Kupon.md) | F12, F13, F14, F15 | RFC-004 | Medium | Not started |
+| **RFC-005** | [Keranjang Belanja, Kupon Promo & Nota Struk Kasir Robek](file:///d:/Projects/stud-web/RFCs/RFC-005-Keranjang-Belanja-Struk-Kupon.md) | F12, F13, F14, F15 | RFC-004 | Medium | Implemented |
 | **RFC-006** | [Alur Pembayaran (QRIS Dinamis 15 Menit & Bayar di Kasir)](file:///d:/Projects/stud-web/RFCs/RFC-006-Alur-Pembayaran-QRIS-Kasir.md) | F16, F17, F18, F19 | RFC-005 | Medium | Not started |
 | **RFC-007** | [Operasional Kasir Filament & Pelacakan Pesanan Real-Time Pelanggan](file:///d:/Projects/stud-web/RFCs/RFC-007-Operasional-Kasir-Filament-Pelacak-Pesanan.md) | F20, F21, F22, F32 | RFC-002, RFC-006 | High | Not started |
 | **RFC-008** | [Autentikasi Akun Member, Polish UI & Pengujian E2E](file:///d:/Projects/stud-web/RFCs/RFC-008-Auth-Member-Polish-UI-Testing-E2E.md) | F24 | RFC-007 | Medium | Not started |
