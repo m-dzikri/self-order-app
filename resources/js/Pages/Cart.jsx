@@ -1,18 +1,22 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Head, Link } from '@inertiajs/react';
+import axios from 'axios';
 import AppLayout from '../Layouts/AppLayout';
 import CartItemCard from '../Components/CartItemCard';
 import CouponInputBox from '../Components/CouponInputBox';
 import ReceiptDocket from '../Components/ReceiptDocket';
 import EmptyCartState from '../Components/EmptyCartState';
 import CustomizerDrawer from '../Components/CustomizerDrawer';
+import PaymentMethodSelector from '../Components/PaymentMethodSelector';
+import QRISModal from '../Components/QRISModal';
+import CashierInstructionModal from '../Components/CashierInstructionModal';
 import { formatRupiah } from '../Utils/formatRupiah';
 import { calculateCartTotals } from '../Utils/calculateCartTotals';
 
 /**
- * Shopping Cart & Temporary Receipt Docket Page (RFC-005, F12, F13, F14, F15).
- * Implements full cart state management, variant modification, coupon discount,
- * PB1 restaurant tax calculation, and ripped paper docket design.
+ * Shopping Cart & Payment Checkout Page (RFC-005, RFC-006, F12-F19).
+ * Features complete cart modification, coupon discounts, PB1 tax,
+ * and 3 payment methods with dynamic 15-minute QRIS & Cashier flows.
  */
 export default function Cart({
     appName = 'Kopi Corat-Coret',
@@ -42,10 +46,15 @@ export default function Cart({
     // 3. Item currently being edited in CustomizerDrawer
     const [editingItem, setEditingItem] = useState(null);
 
-    // 4. Payment method selector (RFC-006 preview)
+    // 4. Payment method selector (RFC-006, F16)
     const [selectedPayment, setSelectedPayment] = useState('qris');
 
-    // 5. User feedback banner
+    // 5. Checkout state & modals (RFC-006, F17, F18, F19)
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [activeQRISOrder, setActiveQRISOrder] = useState(null);
+    const [activeCashierOrder, setActiveCashierOrder] = useState(null);
+
+    // 6. User feedback banner
     const [feedbackToast, setFeedbackToast] = useState(null);
 
     // Persist cart items to localStorage
@@ -155,6 +164,68 @@ export default function Cart({
         setTimeout(() => setFeedbackToast(null), 3000);
     };
 
+    // Handle Checkout Submission (RFC-006, F16, F19)
+    const handleCheckout = async () => {
+        if (cartItems.length === 0 || isSubmitting) return;
+
+        setIsSubmitting(true);
+        setFeedbackToast(null);
+
+        const payload = {
+            payment_method: selectedPayment,
+            coupon_code: appliedCoupon,
+            session_type: orderSession?.type || (orderSession?.table_number ? 'dine_in' : 'takeaway'),
+            table_number: orderSession?.table_number || null,
+            customer_name: orderSession?.customer_name || orderSession?.name || null,
+            customer_phone: orderSession?.customer_phone || orderSession?.phone || null,
+            pickup_time: orderSession?.pickup_time || orderSession?.pickupAt || null,
+            items: cartItems.map((i) => ({
+                menuId: i.menuId,
+                quantity: i.quantity,
+                temperature: i.temperature,
+                sugarLevel: i.sugarLevel,
+                spiceLevel: i.spiceLevel,
+                eggOption: i.eggOption,
+                milk: i.milk,
+                toppings: i.toppings,
+                notes: i.notes,
+            })),
+        };
+
+        try {
+            const response = await axios.post('/order/checkout', payload);
+            const createdOrder = response.data?.order;
+
+            if (createdOrder) {
+                // Clear cart from client storage
+                try {
+                    localStorage.removeItem('sketchbook_cart');
+                    localStorage.removeItem('sketchbook_coupon');
+                    localStorage.setItem('sketchbook_active_order', JSON.stringify(createdOrder));
+                } catch {
+                    // ignore
+                }
+
+                setCartItems([]);
+                setAppliedCoupon(null);
+
+                // Open appropriate modal according to payment method (RFC-006)
+                if (createdOrder.payment_method === 'kasir') {
+                    setActiveCashierOrder(createdOrder);
+                } else {
+                    setActiveQRISOrder(createdOrder);
+                }
+            }
+        } catch (err) {
+            console.error('Checkout failed', err);
+            const errorMsg =
+                err.response?.data?.message || 'Gagal memproses pesanan. Silakan periksa kembali keranjang belanja.';
+            setFeedbackToast(`⚠️ ${errorMsg}`);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     // Find full menu object for CustomizerDrawer
     const editingMenu = useMemo(() => {
         if (!editingItem) return null;
@@ -232,7 +303,7 @@ export default function Cart({
             ) : null}
 
             {/* Empty State vs. Populated Cart */}
-            {cartItems.length === 0 ? (
+            {cartItems.length === 0 && !activeQRISOrder && !activeCashierOrder ? (
                 <EmptyCartState />
             ) : (
                 <div className="space-y-4 pb-12">
@@ -314,160 +385,32 @@ export default function Cart({
                         orderSession={orderSession}
                     />
 
-                    {/* Payment Method Selector (RFC-006 Preparatory Mockup) */}
-                    <div className="space-y-2 pt-1">
-                        <div className="flex items-center justify-between px-1">
-                            <h3 className="text-sm font-extrabold text-[var(--color-ink)]">
-                                Pilih Cara Pembayaran
-                            </h3>
-                            <span className="text-[11px] font-bold text-[var(--color-promo)]">
-                                Langsung Terverifikasi
-                            </span>
-                        </div>
+                    {/* Payment Method Selector (RFC-006, F16) */}
+                    <PaymentMethodSelector
+                        selectedMethod={selectedPayment}
+                        onChange={setSelectedPayment}
+                    />
 
-                        <div className="space-y-2">
-                            {/* Option 1: QRIS */}
-                            <label
-                                onClick={() => setSelectedPayment('qris')}
-                                className={`relative flex cursor-pointer items-center justify-between rounded-xl border-2 border-[var(--color-ink)] p-3 transition-all ${
-                                    selectedPayment === 'qris'
-                                        ? 'bg-[var(--color-primary)]/30 marker-shadow-md -rotate-0.5'
-                                        : 'bg-[var(--color-surface-container-low)] marker-shadow-sm'
-                                }`}
-                            >
-                                <input
-                                    type="radio"
-                                    name="payment"
-                                    value="qris"
-                                    checked={selectedPayment === 'qris'}
-                                    onChange={() => setSelectedPayment('qris')}
-                                    className="sr-only"
-                                />
-                                <div className="flex items-center gap-3">
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--color-ink)] bg-[var(--color-primary)] text-lg shadow-[1.5px_1.5px_0px_var(--color-ink)]">
-                                        ⚡
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-xs font-extrabold text-[var(--color-ink)]">
-                                            QRIS Instan
-                                        </span>
-                                        <span className="text-[10px] text-[var(--color-ink-soft)]">
-                                            BCA, GoPay, OVO, ShopeePay, Dana
-                                        </span>
-                                    </div>
-                                </div>
-                                <div
-                                    className={`flex h-6 w-6 items-center justify-center rounded-full border border-[var(--color-ink)] ${
-                                        selectedPayment === 'qris'
-                                            ? 'bg-[var(--color-ink)] text-[var(--color-surface)] shadow-[1px_1px_0px_var(--color-ink)]'
-                                            : 'bg-[var(--color-surface-container)]'
-                                    }`}
-                                >
-                                    {selectedPayment === 'qris' ? (
-                                        <span className="text-xs font-extrabold">✓</span>
-                                    ) : null}
-                                </div>
-                            </label>
-
-                            {/* Option 2: E-Wallet */}
-                            <label
-                                onClick={() => setSelectedPayment('ewallet')}
-                                className={`relative flex cursor-pointer items-center justify-between rounded-xl border-2 border-[var(--color-ink)] p-3 transition-all ${
-                                    selectedPayment === 'ewallet'
-                                        ? 'bg-[var(--color-primary)]/30 marker-shadow-md'
-                                        : 'bg-[var(--color-surface-container-low)] marker-shadow-sm'
-                                }`}
-                            >
-                                <input
-                                    type="radio"
-                                    name="payment"
-                                    value="ewallet"
-                                    checked={selectedPayment === 'ewallet'}
-                                    onChange={() => setSelectedPayment('ewallet')}
-                                    className="sr-only"
-                                />
-                                <div className="flex items-center gap-3">
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--color-ink)] bg-[var(--color-surface-container-high)] text-lg shadow-[1px_1px_0px_var(--color-ink)]">
-                                        👛
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-xs font-extrabold text-[var(--color-ink)]">
-                                            E-Wallet Langsung
-                                        </span>
-                                        <span className="text-[10px] text-[var(--color-ink-soft)]">
-                                            Deeplink GoPay, ShopeePay atau OVO
-                                        </span>
-                                    </div>
-                                </div>
-                                <div
-                                    className={`flex h-6 w-6 items-center justify-center rounded-full border border-[var(--color-ink)] ${
-                                        selectedPayment === 'ewallet'
-                                            ? 'bg-[var(--color-ink)] text-[var(--color-surface)] shadow-[1px_1px_0px_var(--color-ink)]'
-                                            : 'bg-[var(--color-surface-container)]'
-                                    }`}
-                                >
-                                    {selectedPayment === 'ewallet' ? (
-                                        <span className="text-xs font-extrabold">✓</span>
-                                    ) : null}
-                                </div>
-                            </label>
-
-                            {/* Option 3: Kasir */}
-                            <label
-                                onClick={() => setSelectedPayment('kasir')}
-                                className={`relative flex cursor-pointer items-center justify-between rounded-xl border-2 border-[var(--color-ink)] p-3 transition-all ${
-                                    selectedPayment === 'kasir'
-                                        ? 'bg-[var(--color-primary)]/30 marker-shadow-md rotate-0.5'
-                                        : 'bg-[var(--color-surface-container-low)] marker-shadow-sm'
-                                }`}
-                            >
-                                <input
-                                    type="radio"
-                                    name="payment"
-                                    value="kasir"
-                                    checked={selectedPayment === 'kasir'}
-                                    onChange={() => setSelectedPayment('kasir')}
-                                    className="sr-only"
-                                />
-                                <div className="flex items-center gap-3">
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--color-ink)] bg-[var(--color-surface-container-high)] text-lg shadow-[1px_1px_0px_var(--color-ink)]">
-                                        💵
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-xs font-extrabold text-[var(--color-ink)]">
-                                            Bayar di Kasir
-                                        </span>
-                                        <span className="text-[10px] text-[var(--color-ink-soft)]">
-                                            Tunai, Kartu Debit, atau EDC di meja kasir
-                                        </span>
-                                    </div>
-                                </div>
-                                <div
-                                    className={`flex h-6 w-6 items-center justify-center rounded-full border border-[var(--color-ink)] ${
-                                        selectedPayment === 'kasir'
-                                            ? 'bg-[var(--color-ink)] text-[var(--color-surface)] shadow-[1px_1px_0px_var(--color-ink)]'
-                                            : 'bg-[var(--color-surface-container)]'
-                                    }`}
-                                >
-                                    {selectedPayment === 'kasir' ? (
-                                        <span className="text-xs font-extrabold">✓</span>
-                                    ) : null}
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-
-                    {/* Primary Sticky Checkout CTA */}
+                    {/* Primary Sticky Checkout CTA (TC-006-1) */}
                     <div className="pt-2">
-                        <Link
-                            href="#checkout"
-                            className="btn-tactile flex w-full min-h-[50px] items-center justify-between rounded-2xl border-2 border-[var(--color-ink)] bg-[var(--color-primary)] px-5 py-3.5 text-base font-extrabold text-[var(--color-ink)] marker-shadow-lg hover:bg-[var(--color-primary)] active:translate-x-0.5 active:translate-y-0.5"
+                        <button
+                            type="button"
+                            id="checkout-submit-btn"
+                            disabled={isSubmitting || cartItems.length === 0}
+                            onClick={handleCheckout}
+                            className="btn-tactile flex w-full min-h-[50px] items-center justify-between rounded-2xl border-2 border-[var(--color-ink)] bg-[var(--color-primary)] px-5 py-3.5 text-base font-extrabold text-[var(--color-ink)] marker-shadow-lg hover:bg-[var(--color-primary)] disabled:opacity-50 active:translate-x-0.5 active:translate-y-0.5"
                         >
                             <div className="flex items-center gap-2">
                                 <span aria-hidden="true" className="material-symbols-outlined text-[22px]">
-                                    local_cafe
+                                    {selectedPayment === 'kasir' ? 'payments' : 'local_cafe'}
                                 </span>
-                                <span>Pesan &amp; Bayar</span>
+                                <span>
+                                    {isSubmitting
+                                        ? 'Memproses Pesanan...'
+                                        : selectedPayment === 'kasir'
+                                        ? 'Pesan & Bayar di Kasir'
+                                        : 'Pesan & Bayar Sekarang'}
+                                </span>
                             </div>
                             <div className="flex items-center gap-1.5 font-extrabold">
                                 <span>{formatRupiah(totals.total)}</span>
@@ -475,7 +418,7 @@ export default function Cart({
                                     arrow_forward
                                 </span>
                             </div>
-                        </Link>
+                        </button>
 
                         {/* Barista Micro-Copy */}
                         <div className="mt-2 flex items-center justify-center gap-1.5 px-4 text-center">
@@ -497,6 +440,37 @@ export default function Cart({
                 initialPayload={editingItem}
                 onClose={() => setEditingItem(null)}
                 onAddToCart={handleSaveEditedVariant}
+            />
+
+            {/* QRIS Payment Screen Modal (RFC-006, F17, F18, TC-006-2) */}
+            <QRISModal
+                isOpen={Boolean(activeQRISOrder)}
+                order={activeQRISOrder}
+                onClose={() => setActiveQRISOrder(null)}
+                onPaymentSuccess={(order) => {
+                    setActiveQRISOrder(null);
+                    setFeedbackToast(`✨ Pembayaran pesanan ${order.order_code} berhasil! Terima kasih!`);
+                }}
+                onSwitchToCashier={() => {
+                    const current = activeQRISOrder;
+                    setActiveQRISOrder(null);
+                    setActiveCashierOrder({
+                        ...current,
+                        payment_method: 'kasir',
+                        status: 'unpaid_cashier',
+                    });
+                }}
+            />
+
+            {/* Cashier Payment Instruction Modal (RFC-006, F19, TC-006-4) */}
+            <CashierInstructionModal
+                isOpen={Boolean(activeCashierOrder)}
+                order={activeCashierOrder}
+                onClose={() => setActiveCashierOrder(null)}
+                onViewTracker={() => {
+                    setActiveCashierOrder(null);
+                    setFeedbackToast(`Pesanan ${activeCashierOrder?.order_code} tercatat. Silakan bayar di kasir.`);
+                }}
             />
         </AppLayout>
     );

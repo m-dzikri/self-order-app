@@ -69,10 +69,19 @@ resources/
 
 ## 4. Acceptance Criteria
 
-- [ ] Pengguna dapat memilih antara QRIS, E-Wallet, atau Bayar di Kasir dengan indikator visual radio aktif.
-- [ ] Memilih QRIS menampilkan barcode QR dinamis berlogo kafe dengan timer 15 menit.
-- [ ] Hitung mundur timer berjalan akurat detik demi detik.
-- [ ] Ketika timer mencapai 00:00, QR dinonaktifkan dan tombol "Buat QRIS Baru" dapat diakses.
-- [ ] Tombol unduh QR berhasil mengekspor berkas gambar QR.
-- [ ] Memilih Bayar di Kasir membuat pesanan dengan status `unpaid_cashier` dan pesan petunjuk kasir.
-- [ ] Backend memvalidasi integritas harga item dan perhitungan pajak secara aman.
+- [x] Pengguna dapat memilih antara QRIS, E-Wallet, atau Bayar di Kasir dengan indikator visual radio aktif.
+- [x] Memilih QRIS menampilkan barcode QR dinamis berlogo kafe dengan timer 15 menit.
+- [x] Hitung mundur timer berjalan akurat detik demi detik.
+- [x] Ketika timer mencapai 00:00, QR dinonaktifkan dan tombol "Buat QRIS Baru" dapat diakses.
+- [x] Tombol unduh QR berhasil mengekspor berkas gambar QR.
+- [x] Memilih Bayar di Kasir membuat pesanan dengan status `unpaid_cashier` dan pesan petunjuk kasir.
+- [x] Backend memvalidasi integritas harga item dan perhitungan pajak secara aman.
+
+---
+
+## 5. Implementation Notes
+
+- **Migrasi Database & Relasi Eloquent:** Tabel `orders` dan `order_items` dibuat lengkap dengan relasi Eloquent (`Order` hasMany `OrderItem`), status state machine sesuai `DATA-4`, dan format kode unik (`#ORD-XXXX` untuk Dine-In dan `#TK-XXX` untuk Takeaway).
+- **Proteksi Integritas Harga (`OrderController@store`):** Server menghitung ulang harga asli menu dan modifier dari database untuk mencegah manipulasi harga dari sisi klien (`SEC-1`). Diskon kupon `SKETCHKOPI` (10%) dan pajak PB1 (10%) diverifikasi secara aman dalam transaksi `DB::transaction`.
+- **Generator QRIS Dinamis & Countdown:** Library `qrcode` (v1.5.4) diintegrasikan untuk menggambar kode QR pada canvas HTML, disertai timer hitung mundur 15 menit akurat per detik, stempel overlay kedaluwarsa, tombol "Buat QRIS Baru", dan fitur ekspor gambar QR ("Unduh QR Code").
+- **Modal Instruksi Bayar di Kasir:** Pesanan dengan metode kasir disimpan dengan status awal `unpaid_cashier` dan menampilkan `CashierInstructionModal` yang memandu pelanggan mendatangi meja kasir dengan membawa kode pesanan unik mereka.
