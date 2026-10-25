@@ -13,11 +13,15 @@
             href="https://fonts.googleapis.com/css2?family=Epilogue:wght@600;700;800&family=Nunito+Sans:wght@600;700;800&display=swap"
             rel="stylesheet"
         >
+        <link
+            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+            rel="stylesheet"
+        >
 
         @vite(['resources/css/app.css', 'resources/js/app.jsx'])
         @inertiaHead
     </head>
-    <body class="bg-surface font-body">
+    <body>
         @inertia
     </body>
 </html>

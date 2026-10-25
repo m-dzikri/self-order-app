@@ -1,3 +1,9 @@
+@import 'tailwindcss' source(none);
+@source '../js';
+@source '../views';
+@theme {
+    --shadow-*: initial;
+}
 @import './tokens.css';
 @import './tactile.css';
 

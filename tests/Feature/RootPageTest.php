@@ -7,10 +7,11 @@ use Tests\TestCase;
 
 class RootPageTest extends TestCase
 {
-    /** @test */
-    public function root_page_renders_inertia_app()
+    public function test_root_page_renders_inertia_app(): void
     {
-        $response = $this->get('/')
+        $this->withoutVite();
+
+        $this->get('/')
             ->assertStatus(200)
             ->assertInertia(fn (AssertableInertia $page) => $page->component('Welcome')
                 ->has('appName')

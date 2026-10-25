@@ -4,7 +4,7 @@
 export default function Card({ children, className = '' }) {
     return (
         <div
-            className={`rounded-xl border-2 border-[var(--color-ink)] bg-[var(--color-surface-container-lowest)] shadow-[var(--shadow-tactile-md)] ${className}`}
+            className={`rounded-xl border-2 border-[var(--color-ink)] bg-[var(--color-surface-container-lowest)] marker-shadow-md ${className}`}
         >
             {children}
         </div>

@@ -1,5 +1,5 @@
 /**
- * Tactile sketchbook button (F25, UI-4): hard marker shadow that
+ * Tactile sketchbook button (F25, UI-4): hard marker shadow
  * displaces on press for instant tactile feedback.
  */
 export default function Button({ children, variant = 'primary', className = '', ...props }) {
